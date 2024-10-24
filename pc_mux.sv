@@ -8,7 +8,7 @@ module PC_MUX #(
 (
     input  wire [ADDR_WIDTH-1:0] PC_reg_in,  
     input  wire [ADDR_WIDTH-1:0] Branch_in,
-    // 1 from alu, 0 from PC + 4
+    // 1 from branch, 0 from PC + 4
     input  wire is_branch,  
     output wire [ADDR_WIDTH-1:0] PC_out
 );
