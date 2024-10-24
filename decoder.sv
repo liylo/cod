@@ -10,6 +10,8 @@ module DECODER #(
     input wire reset,
 
     //from IFID
+    input wire [31:0] instruction,
+
     // all possible instructions
     // opcode
     input wire [6:0] opcode,
