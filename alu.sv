@@ -1,3 +1,5 @@
+`default_nettype none
+//TODO need multiple and divide alu operations
 module ALU (
     input  logic [3:0]  alu_op,  
     input  logic [31:0] A,       
