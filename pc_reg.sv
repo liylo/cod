@@ -1,45 +1,44 @@
 `default_nettype none
 
+/*
+ * PC_REG module for RISC-V pipeline
+ *
+ * Responsibilities:
+ * 1. Hold the current Program Counter (PC) value
+ * 2. Handle pipeline stalls and flushes
+ */
 module PC_REG #(
     parameter PC_ADDR = 32'h8000_0000,
-    parameter ADDR_WIDTH = 32,
-    parameter DATA_WIDTH = 32
+    parameter ADDR_WIDTH = 32
 )
 (
-    input  wire [ADDR_WIDTH-1:0] PC_new_reg_in,  
+    input  wire clk,
+    input  wire reset,
+    input  wire [ADDR_WIDTH-1:0] PC_new_reg_in,
     input  wire [1:0] stall_and_flush,
-    output wire [ADDR_WIDTH-1:0] PC_reg_out,
+    output reg  [ADDR_WIDTH-1:0] PC_reg_out
 );
+
     reg [ADDR_WIDTH-1:0] pc_reg;
 
-    typedef enum logic [1:0] {  
-        FETCH = 2'b00,
-        STALL = 2'b01,
-        FLUSH = 2'b10,
-    } state_t;
-
-    state_t cur_state;
-
-    state_t next_state;
-
-    always_comb begin : 
-        case(flush_and_stall)
-            STALL: next_state = STALL;
-            FLUSH: next_state = FLUSH;
-            default: next_state = FETCH;
-        endcase
-    end
+    // Decode stall and flush signals
+    wire stall = stall_and_flush[0];
+    wire flush = stall_and_flush[1];
 
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
-            cur_state <= FETCH;
-        end else begin
-            case(cur_state)
-                FETCH: cur_state <= (flush_and_stall == STALL) ? STALL : FETCH;
-                default: pc_reg <= pc_reg;
-            endcase
-            cur_state <= next_state;
+            pc_reg <= PC_ADDR;         // Reset PC to initial address
+        end else if (flush) begin
+            pc_reg <= PC_ADDR;         // On flush, reset PC to initial address
+        end else if (!stall) begin
+            pc_reg <= PC_new_reg_in;   // Update PC with new value
         end
+        // If stall is asserted, hold the current PC value
+    end
+
+    // Output the current PC value
+    always_comb begin
+        PC_reg_out = pc_reg;
     end
 
 endmodule
