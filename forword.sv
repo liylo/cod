@@ -1,5 +1,5 @@
 `default_nettype none
-
+//TODO: update map
 module Forward #(
     parameter PC_ADDR = 32'h8000_0000, // Initial PC address
     parameter ADDR_WIDTH = 32,         // Address width
@@ -23,13 +23,13 @@ module Forward #(
     input  wire MEMWBRegWrite,
     input  wire EXMEMRegWrite
 );
-
-    assign Forward_op1 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs1_addr)) ? EXMEM_rd_data :
+    always_comb begin : 
+    Forward_op1 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs1_addr)) ? EXMEM_rd_data :
                          (MEMWBRegWrite && (MEMWB_rd_addr != 0) && (MEMWB_rd_addr == IDEX_rs1_addr)) ? MEMWB_rd_data :
                          IDEX_rs1_data;
 
-    assign Forward_op2 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs2_addr)) ? EXMEM_rd_data :
+    Forward_op2 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs2_addr)) ? EXMEM_rd_data :
                          (MEMWBRegWrite && (MEMWB_rd_addr != 0) && (MEMWB_rd_addr == IDEX_rs2_addr)) ? MEMWB_rd_data :
                          IDEX_rs2_data;
-
+    end
 endmodule
