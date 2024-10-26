@@ -10,10 +10,10 @@ module regfile(
     input reg  [4:0]  rf_waddr,
     input reg  [31:0] rf_wdata,
     input reg  rf_we,
+    output reg is_write
 );
 
 logic [31:0] regfile[31:0];
-
 // read part
 always_comb begin
     rf_rdata_a = regfile[rf_raddr_a];
@@ -28,10 +28,15 @@ always_ff @(posedge clk) begin
         end
         rf_raddr_a <= 0;
         rf_raddr_b <= 0;
+        is_write <= 0;
     end
     else if (rf_we) begin
         regfile[rf_waddr] <= rf_wdata;
         regfile[0] <= 0;
+        is_write <= 1;
+    end
+    if (is_write) begin
+        is_write <= 0;
     end
 end
 

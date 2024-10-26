@@ -7,9 +7,16 @@ module Hazard_Detection #(
 )(
     input wire [4:0] IFID_rs1_addr,
     input wire [4:0] IFID_rs2_addr,
-    input wire [4:0] IDEX_rd_addr,
-    input wire MemRead,
-
+    input wire [4:0] MEMWB_rd_addr,
+    input reg is_write,
     output wire [1:0] stall_and_flush
 )
+// check conditions
+  always_comb begin
+    if (is_write && (IFID_rs1_addr == MEMWB_rd_addr || IFID_rs2_addr == MEMWB_rd_addr)) begin
+      stall_and_flush = 2'b10;
+    end else begin
+      stall_and_flush = 2'b00;
+    end
+  end
 endmodule

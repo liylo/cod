@@ -6,6 +6,7 @@
  * 1. Fetch instructions from memory using the Wishbone interface.
  * 2. Provide the fetched instruction to the pipeline.
  */
+
 module IM #(
     parameter PC_ADDR = 32'h8000_0000,
     parameter ADDR_WIDTH = 32,
@@ -18,7 +19,7 @@ module IM #(
     input  wire [ADDR_WIDTH-1:0] PC_addr,
     output reg  [DATA_WIDTH-1:0] instruction,
 
-    output wire [1:0] flush_and_stall
+    output wire [1:0] flush_and_stall,
 
     // Wishbone master interface
     output reg wb_cyc_o,
