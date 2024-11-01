@@ -83,13 +83,17 @@ module final_top (
     // PLL 分频示例
     logic locked, clk_10M, clk_20M;
 
-    pll_example clock_gen (
-        .clk_in1(clk_50M),
-        .clk_out1(clk_10M),   // Generate system clock
-        .clk_out2(clk_20M),  // Generate UART clock
-        .reset(reset_btn),
-        .locked(locked)
-    );
+    //实现分频，不使用模块
+    logic [3:0] cnt;
+    always_ff @(posedge clk_50M or negedge reset_btn) begin
+        if (~reset_btn) cnt <= 4'b0;
+        else if (cnt == 4'b1000) cnt <= 4'b0;
+        else cnt <= cnt + 1;
+    end
+
+    assign clk_10M = cnt[3];
+    assign clk_20M = cnt[2];
+    
 
     // Synchronous reset generation
     logic reset_of_clk10M;
@@ -170,13 +174,13 @@ module final_top (
     wire        wbm_stb_o;
     wire        wbm_ack_i;
 
-    wb_arbiter_2 #(
+    arbiter #(
         .DATA_WIDTH(32),
         .ADDR_WIDTH(32),
         .SELECT_WIDTH(4),
         .ARB_TYPE_ROUND_ROBIN(0),
         .ARB_LSB_HIGH_PRIORITY(1)
-    ) arbiter (
+    ) arbiter_unit (
         .clk(sys_clk),
         .rst(sys_rst),
 
