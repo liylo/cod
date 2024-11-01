@@ -127,14 +127,14 @@ module cpu_master #(
     wire [4:0] ID_rd;
     wire [4:0] ID_rs1;
     wire [4:0] ID_rs2;
-    wire [31:0] ID_imm;
+    wire [DATA_WIDTH-1:0] ID_imm;
     wire ID_imm_type;
 
     wire MEMWB_RegWrite;
     wire [4:0] MEMWB_rf_waddr;
-    wire [31:0] WB_wdata;
-    wire [31:0] ID_rf_rdata_a;
-    wire [31:0] ID_rf_rdata_b;
+    wire [DATA_WIDTH-1:0] WB_wdata;
+    wire [DATA_WIDTH-1:0] ID_rf_rdata_a;
+    wire [DATA_WIDTH-1:0] ID_rf_rdata_b;
 
     wire [2:0] ID_stall_and_flush;
 
@@ -253,5 +253,127 @@ module cpu_master #(
         .imm_out(IDEX_imm)
     );
 
+    // EX stage signals
+    wire [1:0] EX_forward_A;
+    wire [1:0] EX_forward_B;
+    wire [DATA_WIDTH-1:0] EXMEM_alu_result;
+    wire [DATA_WIDTH-1:0] EX_alu_a;
+    wire [DATA_WIDTH-1:0] EX_alu_b;
+    wire [DATA_WIDTH-1:0] EX_alu_result;
+    wire [ADDR_WIDTH-1:0] EX_next_pc;
+    wire [DATA_WIDTH-1:0] EXMEM_rd_data;
+    wire [DATA_WIDTH-1:0] MEMWB_rd_data;
+    wire [4:0] MEMWB_rd_addr;
+
+    // EX stage module
+    ALU_MUX #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) ex_alu_mux_a (
+        .forward(EX_forward_A),
+        .exmem_data(EXMEM_alu_result),
+        .memwb_data(WB_wdata),
+        .which_mux(IDEX_ALUSrc),
+        .pc_or_imm_in(IDEX_PC),
+        .reg_in(IDEX_rdata_a),
+        .alu_mux_out(EX_alu_a)
+    );
+
+    ALU_MUX #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) ex_alu_mux_b (
+        .forward(EX_forward_B),
+        .exmem_data(EXMEM_alu_result),
+        .memwb_data(WB_wdata),
+        .which_mux(IDEX_ALUSrc),
+        .pc_or_imm_in(IDEX_imm),
+        .reg_in(IDEX_rdata_b),
+        .alu_mux_out(EX_alu_b)
+    );
+
+    ALU alu_unit(
+        .alu_op(IDEX_ALUOp),
+        .A(EX_alu_a),
+        .B(EX_alu_b),
+        .result(EX_alu_result)
+    );
+
+    SUM sum_unit(
+        .PC_reg_in(IDEX_PC),
+        .reg_a_in(IDEX_rdata_a),
+        .imm(IDEX_imm),
+        .branch(IDEX_Branch),
+        .PC_reg_out(EX_next_pc)
+    );
+
+    Forward #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) forward_unit (
+        .Forward_op1(EX_forward_A),
+        .Forward_op2(EX_forward_B),
+        .IDEX_rs1_data(IDEX_rdata_a),
+        .IDEX_rs2_data(IDEX_rdata_b),
+        .IDEX_rs1_addr(IDEX_rs1),
+        .IDEX_rs2_addr(IDEX_rs2),
+        .EXMEM_rd_addr(EXMEM_rd_addr),
+        .MEMWB_rd_addr(MEMWB_rd_addr),
+        .MEMWBRegWrite(MEMWB_RegWrite),
+        .EXMEMRegWrite(IDEX_RegWrite)
+    ) ;
+
+
+    // EXMEM stage signals
+    wire EXMEM_MemtoReg;
+    wire EXMEM_RegWrite;
+    wire EXMEM_MemWrite;
+    wire EXMEM_MemRead;
+    wire EXMEM_MemSize;
+    wire [ADDR_WIDTH-1:0] EXMEM_PC;
+    wire [ADDR_WIDTH-1:0] EXMEM_Next_PC;
+    wire [DATA_WIDTH-1:0] EXMEM_ALU_result;
+    wire [DATA_WIDTH-1:0] EXMEM_rs1_data;
+    wire [DATA_WIDTH-1:0] EXMEM_rs2_data;
+    wire [4:0] EXMEM_rs1_addr;
+    wire [4:0] EXMEM_rs2_addr;
+    wire [4:0] EXMEM_rd_addr;
+    wire [1:0] EXMEM_flush_and_stall;
+
+    // EXMEM stage module
+    EXMEMREG #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) exmem (
+        .clk(clk),
+        .reset(reset),
+        .flush_and_stall(EXMEM_flush_and_stall),
+        .MemtoReg(IDEX_MemtoReg),
+        .RegWrite(IDEX_RegWrite),
+        .MemWrite(IDEX_MemWrite),
+        .MemRead(IDEX_MemRead),
+        .MemSize(IDEX_MemSize),
+        .Branch(IDEX_Branch),
+        .PC_in(IDEX_PC),
+        .Next_PC_in(EX_next_pc),
+        .ALU_result_in(EX_alu_result),
+        .rs1_data(IDEX_rdata_a),
+        .rs2_data(IDEX_rdata_b),
+        .rs1_addr(IDEX_rs1),
+        .rs2_addr(IDEX_rs2),
+        .rd_addr(IDEX_rd),
+        .PC_out(EXMEM_PC),
+        .Next_PC_out(EXMEM_Next_PC),
+        .ALU_result_out(EXMEM_ALU_result),
+        .rs1_data_out(EXMEM_rs1_data),
+        .rs2_data_out(EXMEM_rs2_data),
+        .rs1_addr_out(EXMEM_rs1_addr),
+        .rs2_addr_out(EXMEM_rs2_addr),
+        .rd_addr_out(EXMEM_rd_addr)
+    );
 
 endmodule

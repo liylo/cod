@@ -30,11 +30,14 @@ module EXMEMREG #(
     input wire MemWrite,
     input wire MemRead, 
     input wire Branch,
+    input wire MemSize,
 
     output reg MemWrite_out,   // 1: Enable writing to memory
                                // 0: Disable writing to memory
     output reg MemRead_out,    // 1: Enable reading from memory
                                // 0: Disable reading from memory
+    output reg MemSize_out,    // 1: 32-bit memory access
+                               // 0: 8-bit memory access
     output reg Branch_out,     // 1: Enable branch operation
                                // 0: Disable branch operation
 
@@ -70,6 +73,7 @@ module EXMEMREG #(
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             PC_out         <= PC_ADDR;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
@@ -85,6 +89,7 @@ module EXMEMREG #(
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             PC_out         <= PC_in;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
@@ -100,6 +105,7 @@ module EXMEMREG #(
             RegWrite_out   <= RegWrite;
             MemWrite_out   <= MemWrite;
             MemRead_out    <= MemRead;
+            MemSize_out    <= MemSize;
             Branch_out     <= Branch;
             PC_out         <= PC_in;
             Next_PC_out    <= Next_PC_in;

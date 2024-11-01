@@ -1,10 +1,10 @@
 `default_nettype none
 //TODO need multiple and divide alu operations
 module ALU (
-    input  logic [3:0]  alu_op,  
-    input  logic [31:0] A,       
-    input  logic [31:0] B,       
-    output logic [31:0] result  
+    input  wire [3:0]  alu_op,  
+    input  wire [31:0] A,       
+    input  wire [31:0] B,       
+    output reg [31:0] result  
 );
     // Use uppercase to prevent keyword conflicts
     typedef enum logic [3:0] {
