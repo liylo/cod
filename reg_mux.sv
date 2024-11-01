@@ -10,10 +10,10 @@ module REG_MUX #(
     input  wire [DATA_WIDTH-1:0] PC_reg_in,  
     input  wire [DATA_WIDTH-1:0] alu_in,
     input  wire [DATA_WIDTH-1:0] mem_in,
-    output wire [DATA_WIDTH-1:0] reg_out
+    output reg [DATA_WIDTH-1:0] reg_out
 );
-    always_comb begin : 
-        case(which_mux)
+    always_comb begin
+        case(which_mux) 
             2'b00: begin
                 reg_out = PC_reg_in;
             end

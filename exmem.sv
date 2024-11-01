@@ -47,6 +47,7 @@ module EXMEMREG #(
     input wire [DATA_WIDTH-1:0] ALU_result_in,
     input wire [DATA_WIDTH-1:0] rs1_data,
     input wire [DATA_WIDTH-1:0] rs2_data,
+    input wire [4:0] waddr,  // Source register 1 index
     input wire [4:0] rs1_addr,  // Source register 1 index
     input wire [4:0] rs2_addr,  // Source register 2 index
     input wire [4:0] rd_addr,   // Destination register index
@@ -56,6 +57,7 @@ module EXMEMREG #(
     output reg [DATA_WIDTH-1:0] ALU_result_out,
     output reg [DATA_WIDTH-1:0] rs1_data_out,
     output reg [DATA_WIDTH-1:0] rs2_data_out,
+    output reg [4:0] waddr_out,    
     output reg [4:0] rs1_addr_out, // Source register 1 index
     output reg [4:0] rs2_addr_out, // Source register 2 index
     output reg [4:0] rd_addr_out   // Destination register index
@@ -83,6 +85,7 @@ module EXMEMREG #(
             rs1_addr_out   <= 5'b00000;
             rs2_addr_out   <= 5'b00000;
             rd_addr_out    <= 5'b00000;
+            waddr_out      <= 5'b00000;
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
             MemtoReg_out   <= 1'b0;
@@ -99,6 +102,7 @@ module EXMEMREG #(
             rs1_addr_out   <= 5'b00000;
             rs2_addr_out   <= 5'b00000;
             rd_addr_out    <= 5'b00000;
+            waddr_out      <= 5'b00000;
         end else if (!stall) begin
             // Update all outputs with input values
             MemtoReg_out   <= MemtoReg;
@@ -115,6 +119,7 @@ module EXMEMREG #(
             rs1_addr_out   <= rs1_addr;
             rs2_addr_out   <= rs2_addr;
             rd_addr_out    <= rd_addr;
+            waddr_out      <= waddr;
         end
         // If stall is asserted, hold the current values (do nothing)
     end

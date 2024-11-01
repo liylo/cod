@@ -28,8 +28,6 @@ module cpu_master #(
     output reg id_wb_we_o
 );
     // IF stage signals
-    wire [ADDR_WIDTH-1:0] MEM_Branch_pc;
-    wire MEM_branch;
     wire [ADDR_WIDTH-1:0] IF_PC_new_1;
     wire [ADDR_WIDTH-1:0] IF_PC_new;
     wire [ADDR_WIDTH-1:0] IF_PC_reg;
@@ -129,8 +127,8 @@ module cpu_master #(
     wire [4:0] ID_rs2;
     wire [DATA_WIDTH-1:0] ID_imm;
     wire ID_imm_type;
+    wire [4:0] ID_waddr;
 
-    wire MEMWB_RegWrite;
     wire [4:0] MEMWB_rf_waddr;
     wire [DATA_WIDTH-1:0] WB_wdata;
     wire [DATA_WIDTH-1:0] ID_rf_rdata_a;
@@ -179,7 +177,8 @@ module cpu_master #(
     .rs1(ID_rs1),
     .rs2(ID_rs2),
     .imm(ID_imm),
-    .imm_type(ID_imm_type)
+    .imm_type(ID_imm_type),
+    .waddr(ID_waddr)
 );
 
     regfile regfile_unit (
@@ -208,6 +207,7 @@ module cpu_master #(
     wire [4:0] IDEX_rs1;
     wire [4:0] IDEX_rs2;
     wire [4:0] IDEX_rd;
+    wire [4:0] IDEX_waddr;
     wire [DATA_WIDTH-1:0] IDEX_imm;
     wire IDEX_imm_type;
     wire [1:0] IDEX_flush_and_stall;
@@ -236,11 +236,13 @@ module cpu_master #(
         .rs1_addr(ID_rs1),
         .rs2_addr(ID_rs2),
         .rd_addr(ID_rd),
+        .waddr(ID_waddr),
         .imm_type(ID_imm_type),
         .imm(ID_imm),
         .PC_out(IDEX_PC),
         .rs1_data_out(IDEX_rdata_a),
         .rs2_data_out(IDEX_rdata_b),
+        .waddr_out(IDEX_waddr),
         .ALUOp_out(IDEX_ALUOp),
         .ALUSrc_out(IDEX_ALUSrc),
         .MemtoReg_out(IDEX_MemtoReg),
@@ -256,14 +258,10 @@ module cpu_master #(
     // EX stage signals
     wire [1:0] EX_forward_A;
     wire [1:0] EX_forward_B;
-    wire [DATA_WIDTH-1:0] EXMEM_alu_result;
     wire [DATA_WIDTH-1:0] EX_alu_a;
     wire [DATA_WIDTH-1:0] EX_alu_b;
     wire [DATA_WIDTH-1:0] EX_alu_result;
     wire [ADDR_WIDTH-1:0] EX_next_pc;
-    wire [DATA_WIDTH-1:0] EXMEM_rd_data;
-    wire [DATA_WIDTH-1:0] MEMWB_rd_data;
-    wire [4:0] MEMWB_rd_addr;
 
     // EX stage module
     ALU_MUX #(
@@ -272,7 +270,7 @@ module cpu_master #(
         .DATA_WIDTH(DATA_WIDTH)
     ) ex_alu_mux_a (
         .forward(EX_forward_A),
-        .exmem_data(EXMEM_alu_result),
+        .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
         .which_mux(IDEX_ALUSrc),
         .pc_or_imm_in(IDEX_PC),
@@ -286,7 +284,7 @@ module cpu_master #(
         .DATA_WIDTH(DATA_WIDTH)
     ) ex_alu_mux_b (
         .forward(EX_forward_B),
-        .exmem_data(EXMEM_alu_result),
+        .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
         .which_mux(IDEX_ALUSrc),
         .pc_or_imm_in(IDEX_imm),
@@ -333,6 +331,7 @@ module cpu_master #(
     wire EXMEM_MemWrite;
     wire EXMEM_MemRead;
     wire EXMEM_MemSize;
+    wire EXMEM_Branch;
     wire [ADDR_WIDTH-1:0] EXMEM_PC;
     wire [ADDR_WIDTH-1:0] EXMEM_Next_PC;
     wire [DATA_WIDTH-1:0] EXMEM_ALU_result;
@@ -341,7 +340,9 @@ module cpu_master #(
     wire [4:0] EXMEM_rs1_addr;
     wire [4:0] EXMEM_rs2_addr;
     wire [4:0] EXMEM_rd_addr;
+    wire [4:0] EXMEM_waddr;
     wire [1:0] EXMEM_flush_and_stall;
+
 
     // EXMEM stage module
     EXMEMREG #(
@@ -366,6 +367,7 @@ module cpu_master #(
         .rs1_addr(IDEX_rs1),
         .rs2_addr(IDEX_rs2),
         .rd_addr(IDEX_rd),
+        .waddr(IDEX_waddr),
         .PC_out(EXMEM_PC),
         .Next_PC_out(EXMEM_Next_PC),
         .ALU_result_out(EXMEM_ALU_result),
@@ -373,7 +375,132 @@ module cpu_master #(
         .rs2_data_out(EXMEM_rs2_data),
         .rs1_addr_out(EXMEM_rs1_addr),
         .rs2_addr_out(EXMEM_rs2_addr),
-        .rd_addr_out(EXMEM_rd_addr)
+        .rd_addr_out(EXMEM_rd_addr),
+        .waddr_out(EXMEM_waddr),
+        .MemtoReg_out(EXMEM_MemtoReg),
+        .RegWrite_out(EXMEM_RegWrite),
+        .MemWrite_out(EXMEM_MemWrite),
+        .MemRead_out(EXMEM_MemRead),
+        .MemSize_out(EXMEM_MemSize),
+        .Branch_out(EXMEM_Branch)
     );
+
+    // MEM stage signals
+    wire MEM_branch_flush;
+    wire [ADDR_WIDTH-1:0] MEM_Branch_pc;
+    wire MEM_branch;
+    wire MEM_memory_data;
+    wire [1:0] MEM_flush_and_stall;
+
+
+    // MEM stage module
+    Branch #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) mem_branch (
+        .clk(clk),
+        .reset(reset),
+        .flush(MEM_branch_flush),
+        .branch(EXMEM_Branch),
+        .Next_PC(EXMEM_Next_PC),
+        .branch_condition_result(EXMEM_ALU_result),
+        .branch_out(MEM_Branch_pc),
+        .use_branch(MEM_branch)
+    );
+
+    MEMORY #(
+        .DATA_WIDTH(DATA_WIDTH),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .SRAM_ADDR_WIDTH(20),
+        .SRAM_DATA_WIDTH(32)
+    ) mem (
+        .clk_i(clk),
+        .rst_i(reset),
+        .stall_and_flush_out(MEM_flush_and_stall),
+        .wb_cyc_o(id_wb_cyc_o),
+        .wb_stb_o(id_wb_stb_o),
+        .wb_ack_i(id_wb_ack_i),
+        .wb_adr_o(id_wb_adr_o),
+        .wb_dat_o(id_wb_dat_o),
+        .wb_dat_i(id_wb_dat_i),
+        .wb_sel_o(id_wb_sel_o),
+        .wb_we_o(id_wb_we_o),
+        .Mem_size_in(EXMEM_MemSize),
+        .Mem_write_in(EXMEM_MemWrite),
+        .Mem_Read_in(EXMEM_MemRead),
+        .Mem_addr_in(EXMEM_ALU_result),
+        .Mem_data_in(EXMEM_rs2_data),
+        .Mem_data_out(MEM_memory_data)
+    );
+
+    // MEMWB stage signals
+    wire MEMWB_MemtoReg;
+    wire MEMWB_RegWrite;
+    wire [ADDR_WIDTH-1:0] MEMWB_PC;
+    wire [DATA_WIDTH-1:0] MEMWB_ALU_result;
+    wire [DATA_WIDTH-1:0] MEMWB_memory_data;
+    wire [4:0] MEMWB_rd_addr;
+    wire [1:0] MEMWB_flush_and_stall;
+    wire [4:0] MEMWB_waddr;
+
+    // MEMWB stage module
+    MEMWBREG #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) memwb (
+        .clk(clk),
+        .reset(reset),
+        .flush_and_stall(MEMWB_flush_and_stall),
+        .MemtoReg(EXMEM_MemtoReg),
+        .RegWrite(EXMEM_RegWrite),
+        .PC_in(EXMEM_PC),
+        .ALU_result_in(EXMEM_ALU_result),
+        .memory_data_in(MEM_memory_data),
+        .rd_addr_in(EXMEM_rd_addr),
+        .waddr_in(EXMEM_waddr),
+        .PC_out(MEMWB_PC),
+        .ALU_result_out(MEMWB_ALU_result),
+        .memory_data_out(MEMWB_memory_data),
+        .rd_addr_out(MEMWB_rd_addr),
+        .waddr_out(MEMWB_waddr),
+        .MemtoReg_out(MEMWB_MemtoReg),
+        .RegWrite_out(MEMWB_RegWrite)
+    );
+
+    // WB stage signals
+
+
+    // WB stage module
+    REG_MUX #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) wb_reg_mux (
+        .which_mux(MEMWB_MemtoReg),
+        .memwb_data(MEMWB_memory_data),
+        .memwb_alu_result(MEMWB_ALU_result),
+        .wb_wdata(WB_wdata),
+        .PC_reg_in(MEMWB_PC)
+    );
+
+    // Stall&Flush Controll
+    SFCONTROL #(
+        .PC_ADDR(32'h8000_0000),
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH)
+    ) sfcontrol (
+        .IFID_stall_and_flush(IFID_flush_and_stall),
+        .IDEX_stall_and_flush(ID_stall_and_flush),
+        .EXMEM_stall_and_flush(EXMEM_flush_and_stall),
+        .MEMWB_stall_and_flush(MEMWB_flush_and_stall),
+        .PC_stall_and_flush(MEMWB_flush_and_stall),
+        .branch(MEM_branch_flush),
+        .mem(MEM_flush_and_stall),
+        .im(IF_stall_and_flush),
+        .hazard(ID_stall_and_flush)
+    );
+
 
 endmodule

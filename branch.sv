@@ -24,13 +24,15 @@ module Branch #(
     input wire [DATA_WIDTH-1:0] Next_PC,   // Calculated branch target address
                                            // Relevant when `branch` is 1
 
-    input wire branch_condition_result,    // 1: Branch condition is met (branch taken)
+    input wire [DATA_WIDTH-1:0] ALU_result,    // 1: Branch condition is met (branch taken)
                                            // 0: Branch condition is not met (branch not taken)
 
     output reg [ADDR_WIDTH-1:0] branch_out, // Branch target address to update PC
     output reg use_branch      
 );
-    
+    wire branch_condition_result;
+    assign branch_condition_result = (ALU_result == 0) ? 1 : 0; // Branch condition is met when ALU_result is 0
+
     // Sequential logic to handle branch decisions
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
