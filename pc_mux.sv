@@ -6,15 +6,11 @@ module PC_MUX #(
     parameter DATA_WIDTH = 32
 )
 (
-    input  wire MemtoReg,
-    input  wire PCtoReg,
-    input  wire [DATA_WIDTH-1:0] ALU_result_in,  
-    input  wire [DATA_WIDTH-1:0] mem_in,
-    input  wire [ADDR_WIDTH-1:0] PC_reg_in,
-    output wire [ADDR_WIDTH-1:0] PC_out
+    input  wire Branch,
+    input  wire [DATA_WIDTH-1:0] Branch_pc_in,  
+    input  wire [ADDR_WIDTH-1:0] PC_new_reg_in,
+    output wire [ADDR_WIDTH-1:0] PC_new_out
 );
-    always_comb begin
-        PC_out = (MemtoReg) ? mem_in :   // Priority 1: MEM forwarding
-                     (PCtoReg) ? PC_reg_in : ALU_result_in;   // Priority 2: ALU forwarding
-    end
+    // 组合逻辑。如果Branch为1，则输出Branch_pc_in，否则输出PC_new_reg_in
+    assign PC_new_out = Branch ? Branch_pc_in : PC_new_reg_in;
 endmodule
