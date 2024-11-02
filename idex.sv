@@ -44,10 +44,10 @@ module IDEXREG #(
 
     // Save for EX stage
     input wire [3:0] ALUOp,
-    input wire ALUSrc,
+    input wire [1:0] ALUSrc,
 
     output reg [3:0] ALUOp_out, // Specifies the ALU operation to perform based on alu_ops_t
-    output reg ALUSrc_out,      // 1: ALU second operand is an immediate value
+    output reg [1:0] ALUSrc_out,      // 1: ALU second operand is an immediate value
                                // 0: ALU second operand is from a register
 
     // Save for ID/EX stage
@@ -92,7 +92,7 @@ module IDEXREG #(
             MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             ALUOp_out      <= 4'b0000;
-            ALUSrc_out     <= 1'b0;
+            ALUSrc_out     <= 1'b00;
             PC_out         <= PC_ADDR;
             rs1_data_out   <= {DATA_WIDTH{1'b0}};
             rs2_data_out   <= {DATA_WIDTH{1'b0}};
@@ -111,7 +111,7 @@ module IDEXREG #(
             MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             ALUOp_out      <= 4'b0000;
-            ALUSrc_out     <= 1'b0;
+            ALUSrc_out     <= 1'b00;
             PC_out         <= PC_in;
             rs1_data_out   <= {DATA_WIDTH{1'b0}};
             rs2_data_out   <= {DATA_WIDTH{1'b0}};

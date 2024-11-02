@@ -119,7 +119,7 @@ module cpu_master #(
     wire ID_MemRead;
     wire ID_MemSize;
     wire ID_Branch;
-    wire ID_ALUSrc;
+    wire [1:0] ID_ALUSrc;
     wire [3:0] ID_ALUOp;
 
     wire [4:0] ID_rd;
@@ -200,7 +200,7 @@ module cpu_master #(
     wire IDEX_MemRead;
     wire IDEX_MemSize;
     wire IDEX_Branch;
-    wire IDEX_ALUSrc;
+    wire [1:0] IDEX_ALUSrc;
     wire [3:0] IDEX_ALUOp;
     wire [DATA_WIDTH-1:0] IDEX_rdata_a;
     wire [DATA_WIDTH-1:0] IDEX_rdata_b;
@@ -272,7 +272,7 @@ module cpu_master #(
         .forward(EX_forward_A),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc),
+        .which_mux(IDEX_ALUSrc[0]),
         .pc_or_imm_in(IDEX_PC),
         .reg_in(IDEX_rdata_a),
         .alu_mux_out(EX_alu_a)
@@ -286,7 +286,7 @@ module cpu_master #(
         .forward(EX_forward_B),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc),
+        .which_mux(IDEX_ALUSrc[1]),
         .pc_or_imm_in(IDEX_imm),
         .reg_in(IDEX_rdata_b),
         .alu_mux_out(EX_alu_b)

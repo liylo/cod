@@ -32,7 +32,7 @@ module Controler(
                            // 0: 8-bit memory access
     output reg Branch,     // 1: Enable branch operation
                            // 0: Disable branch operation
-    output reg ALUSrc,     // 1: ALU second operand is an immediate value
+    output reg [1:0] ALUSrc,     // 1: ALU second operand is an immediate value
                            // 0: ALU second operand is from a register
     output reg [3:0] ALUOp  // Specifies the ALU operation to perform based on alu_ops_t
 );
@@ -61,7 +61,7 @@ module Controler(
                 MemRead  = 1'b0;
                 MemSize  = 1'b1;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                ALUSrc   = 1'b00;
 
                 case ({funct7, funct3})
                     {7'b0000000, 3'b000}: ALUOp = ADD;
@@ -83,7 +83,7 @@ module Controler(
                 MemRead  = 1'b0;
                 MemSize  = 1'b1;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b01;
 
                 case (funct3)
                     3'b000: ALUOp = ADD;
@@ -107,7 +107,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b1;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b01;
                 ALUOp    = ADD;
 
                 case ({funct3})
@@ -123,7 +123,7 @@ module Controler(
                 MemWrite = 1'b1;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b01;
                 ALUOp    = ADD;
 
                 case ({funct3})
@@ -138,7 +138,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b1;
-                ALUSrc   = 1'b0;
+                ALUSrc   = 1'b00;
                 ALUOp    = SUB;
                 MemSize  = 1'b1;
             end
@@ -149,7 +149,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b01;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
@@ -160,7 +160,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                ALUSrc   = 1'b00;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
@@ -171,7 +171,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b10;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
@@ -182,7 +182,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                ALUSrc   = 1'b10;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
@@ -193,7 +193,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                ALUSrc   = 1'b00;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
