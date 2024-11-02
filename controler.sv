@@ -61,7 +61,7 @@ module Controler(
                 MemRead  = 1'b0;
                 MemSize  = 1'b1;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b00;
+                ALUSrc   = 2'b00;
 
                 case ({funct7, funct3})
                     {7'b0000000, 3'b000}: ALUOp = ADD;
@@ -107,7 +107,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b1;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b01;
+                ALUSrc   = 2'b01;
                 ALUOp    = ADD;
 
                 case ({funct3})
@@ -171,7 +171,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b10;
+                ALUSrc   = 2'b10;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
@@ -182,7 +182,7 @@ module Controler(
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 Branch   = 1'b0;
-                ALUSrc   = 1'b10;
+                ALUSrc   = 2'b10;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
