@@ -58,8 +58,6 @@ module IDEXREG #(
     input wire [4:0] rs1_addr,  // Source register 1 index
     input wire [4:0] rs2_addr,  // Source register 2 index
     input wire [4:0] rd_addr,   // Destination register index
-    input wire [4:0] waddr,
-    output reg [4:0] waddr_out,
 
     input wire imm_type,
     input wire [DATA_WIDTH-1:0] imm,
@@ -101,7 +99,6 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
-            waddr_out      <= 5'b00000;
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
             MemtoReg_out   <= 1'b0;
@@ -120,7 +117,6 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
-            waddr_out      <= 5'b00000;
         end else if (!stall) begin
             // Update all outputs with input values
             MemtoReg_out   <= MemtoReg;
@@ -139,7 +135,6 @@ module IDEXREG #(
             rd_addr_out    <= rd_addr;
             imm_type_out   <= imm_type;
             imm_out        <= imm;
-            waddr_out      <= waddr;
         end
         // If stall is asserted, hold the current values (do nothing)
     end

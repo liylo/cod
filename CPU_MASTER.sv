@@ -127,7 +127,6 @@ module cpu_master #(
     wire [4:0] ID_rs2;
     wire [DATA_WIDTH-1:0] ID_imm;
     wire ID_imm_type;
-    wire [4:0] ID_waddr;
 
     wire [DATA_WIDTH-1:0] WB_wdata;
     wire [DATA_WIDTH-1:0] ID_rf_rdata_a;
@@ -176,8 +175,7 @@ module cpu_master #(
     .rs1(ID_rs1),
     .rs2(ID_rs2),
     .imm(ID_imm),
-    .imm_type(ID_imm_type),
-    .waddr(ID_waddr)
+    .imm_type(ID_imm_type)
 );
 
     wire [DATA_WIDTH-1:0] ID_final_rdata_a;
@@ -185,7 +183,7 @@ module cpu_master #(
 
 ID_REG_IN_MUX id_reg_in_mux1 (
 .read_addr(ID_rs1),
-.write_addr(MEMWB_waddr),
+.write_addr(MEMWB_rd_addr),
  .write_enable(MEMWB_RegWrite),
 
 .write_data(WB_wdata),
@@ -196,7 +194,7 @@ ID_REG_IN_MUX id_reg_in_mux1 (
 
 ID_REG_IN_MUX id_reg_in_mux2 (
 .read_addr(ID_rs2),
-.write_addr(MEMWB_waddr),
+.write_addr(MEMWB_rd_addr),
  .write_enable(MEMWB_RegWrite),
 
 .write_data(WB_wdata),
@@ -212,7 +210,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .rf_rdata_a(ID_rf_rdata_a),
         .rf_raddr_b(ID_rs2),
         .rf_rdata_b(ID_rf_rdata_b),
-        .rf_waddr(MEMWB_waddr),
+        .rf_waddr(MEMWB_rd_addr),
         .rf_wdata(WB_wdata),
         .rf_we(MEMWB_RegWrite)
     );
@@ -231,7 +229,6 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [4:0] IDEX_rs1;
     wire [4:0] IDEX_rs2;
     wire [4:0] IDEX_rd;
-    wire [4:0] IDEX_waddr;
     wire [DATA_WIDTH-1:0] IDEX_imm;
     wire IDEX_imm_type;
     wire [1:0] IDEX_flush_and_stall;
@@ -262,13 +259,11 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .rs1_addr(ID_rs1),
         .rs2_addr(ID_rs2),
         .rd_addr(ID_rd),
-        .waddr(ID_waddr),
         .imm_type(ID_imm_type),
         .imm(ID_imm),
         .PC_out(IDEX_PC),
         .rs1_data_out(IDEX_rdata_a),
         .rs2_data_out(IDEX_rdata_b),
-        .waddr_out(IDEX_waddr),
         .ALUOp_out(IDEX_ALUOp),
         .ALUSrc_out(IDEX_ALUSrc),
         .MemWrite_out(IDEX_MemWrite),
@@ -367,7 +362,6 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [4:0] EXMEM_rs1_addr;
     wire [4:0] EXMEM_rs2_addr;
     wire [4:0] EXMEM_rd_addr;
-    wire [4:0] EXMEM_waddr;
     wire [1:0] EXMEM_flush_and_stall;
 
 
@@ -394,7 +388,6 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .rs1_addr(IDEX_rs1),
         .rs2_addr(IDEX_rs2),
         .rd_addr(IDEX_rd),
-        .waddr(IDEX_waddr),
         .PC_out(EXMEM_PC),
         .Next_PC_out(EXMEM_Next_PC),
         .ALU_result_out(EXMEM_ALU_result),
@@ -403,7 +396,6 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .rs1_addr_out(EXMEM_rs1_addr),
         .rs2_addr_out(EXMEM_rs2_addr),
         .rd_addr_out(EXMEM_rd_addr),
-        .waddr_out(EXMEM_waddr),
         .MemtoReg_out(EXMEM_MemtoReg),
         .RegWrite_out(EXMEM_RegWrite),
         .MemWrite_out(EXMEM_MemWrite),
@@ -469,7 +461,6 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [DATA_WIDTH-1:0] MEMWB_memory_data;
     wire [4:0] MEMWB_rd_addr;
     wire [1:0] MEMWB_flush_and_stall;
-    wire [4:0] MEMWB_waddr;
 
     // MEMWB stage module
     MEMWBREG #(
@@ -486,12 +477,10 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .ALU_result_in(EXMEM_ALU_result),
         .memory_data_in(MEM_memory_data),
         .rd_addr_in(EXMEM_rd_addr),
-        .waddr_in(EXMEM_waddr),
         .PC_out(MEMWB_PC),
         .ALU_result_out(MEMWB_ALU_result),
         .memory_data_out(MEMWB_memory_data),
         .rd_addr_out(MEMWB_rd_addr),
-        .waddr_out(MEMWB_waddr),
         .MemtoReg_out(MEMWB_MemtoReg),
         .RegWrite_out(MEMWB_RegWrite)
     );
