@@ -1,4 +1,5 @@
-module sram_controller #(
+// TODO: 等待大改
+module MEMORY #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 32,
     parameter SRAM_ADDR_WIDTH = 20,
@@ -7,170 +8,191 @@ module sram_controller #(
     localparam SRAM_BYTES = SRAM_DATA_WIDTH / 8,
     localparam SRAM_BYTE_WIDTH = $clog2(SRAM_BYTES)
 ) (
-    // clk and reset
+    // Clock and reset
     input wire clk_i, 
     input wire rst_i, 
 
-    // flush
-    output wire [1:0] stall_and_flush,
+    // Stall and flush signals
+    output wire [1:0] stall_and_flush_out,
 
-    // wishbone slave interface
-    input wire wb_cyc_i, 
-    input wire wb_stb_i, 
-    output reg wb_ack_o, 
-    input wire [ADDR_WIDTH-1:0] wb_adr_i,
-    input wire [DATA_WIDTH-1:0] wb_dat_i,
+    // Wishbone interface
+    output reg wb_cyc_o,
+    output reg wb_stb_o,
+    input wire wb_ack_i,
+    output reg [ADDR_WIDTH-1:0] wb_adr_o,
     output reg [DATA_WIDTH-1:0] wb_dat_o,
-    input wire [DATA_WIDTH/8-1:0] wb_sel_i, // Byte enable from Wishbone
-    input wire wb_we_i, 
+    input wire [DATA_WIDTH-1:0] wb_dat_i,
+    output reg [DATA_WIDTH/8-1:0] wb_sel_o,
+    output reg wb_we_o,
 
-    // sram interface
-    output reg [SRAM_ADDR_WIDTH-1:0] sram_addr,
-    inout wire [SRAM_DATA_WIDTH-1:0] sram_data,
-    output reg sram_ce_n, 
-    output reg sram_oe_n, 
-    output reg sram_we_n, 
-    output reg [SRAM_BYTES-1:0] sram_be_n // Byte enable for SRAM
+    // CPU interface
+    input wire Mem_size_in,               // 0: Byte access, 1: Word access
+    input wire Mem_write_in,
+    input wire Mem_Read_in,
+    input wire [ADDR_WIDTH-1:0] Mem_addr_in,
+    input wire [DATA_WIDTH-1:0] Mem_data_in,
+    output wire [DATA_WIDTH-1:0] Mem_data_out
 );
 
-  typedef enum logic [2:0] {
-    STATE_IDLE = 0,
-    STATE_READ = 1,
-    STATE_READ_2 = 2,
-    STATE_WRITE = 3,
-    STATE_WRITE_2 = 4,
-    STATE_WRITE_3 = 5,
-    STATE_DONE = 6
-  } state_t;
+    // State machine states
+    localparam IDLE  = 2'b00;
+    localparam READ  = 2'b01;
+    localparam WRITE = 2'b10;
 
-  state_t state;
+    reg [1:0] state, next_state;
 
-  // SRAM data tri-state control
-  reg [SRAM_DATA_WIDTH-1:0] sram_data_o_reg;
-  reg sram_data_t_reg; // Tri-state control
-  
-  reg [SRAM_DATA_WIDTH-1:0] sram_data_i_reg; // Input register for SRAM data
+    // Internal registers
+    reg [ADDR_WIDTH-1:0] addr_reg;
+    reg [DATA_WIDTH-1:0] data_reg;
+    reg [DATA_WIDTH/8-1:0] sel_reg;
+    reg we_reg;
+    reg size_reg;
+    reg [DATA_WIDTH-1:0] read_data_reg;
 
-  // Assign the tri-state data bus control
-  assign sram_data = (sram_data_t_reg) ? 32'bz : sram_data_o_reg;
-
-  // Control signals
-  reg ram_ce_n_reg;
-  reg ram_oe_n_reg;
-  reg ram_we_n_reg;
-
-  // Assign control signals to actual outputs
-  assign sram_ce_n = ram_ce_n_reg;
-  assign sram_oe_n = ram_oe_n_reg;
-  assign sram_we_n = ram_we_n_reg;
-
-  // Main state machine
-  always_ff @ (posedge clk_i or posedge rst_i) begin
-    if (rst_i) begin
-      // Reset logic
-      ram_ce_n_reg <= 1'b1;
-      ram_oe_n_reg <= 1'b1;
-      ram_we_n_reg <= 1'b1;
-      sram_be_n <= 4'b0000;
-      sram_data_o_reg <= 0;
-      sram_data_t_reg <= 1'b1; // Default to high-Z (input mode)
-      wb_ack_o <= 1'b0;
-      state <= STATE_IDLE;
-    end else begin
-      case (state)
-        STATE_IDLE: begin
-          if (wb_cyc_i && wb_stb_i) begin
-            // stall_and_flush <= 2'b00;
-            stall_and_flush <= 2'b10;
-
-            ram_ce_n_reg <= 1'b0; // Enable SRAM
-            sram_addr <=  wb_adr_i[SRAM_ADDR_WIDTH+1:2]; // Set address
-            sram_be_n <= ~wb_sel_i; // Set byte enable based on wb_sel_i
-
-            if (wb_we_i) begin
-              // Write cycle
-              sram_data_t_reg <= 1'b0; // Drive sram_data bus (write mode)
-              state <= STATE_WRITE;
-            end else begin
-              // Read cycle
-              sram_data_t_reg <= 1'b1; // Set sram_data to high-Z (read mode)
-              ram_oe_n_reg <= 1'b0; // Enable SRAM output
-              state <= STATE_READ;
-            end
-          end
-        end
-
-        STATE_READ: begin
-          // Latch the SRAM data on read cycle
-          sram_data_i_reg <= sram_data; // Read data from SRAM
-          state <= STATE_READ_2;
-        end
-
-        STATE_READ_2: begin
-          // Latch read data from SRAM and acknowledge
-          // Selectively copy the data bytes based on sram_be_n
-          if (~sram_be_n[0]) wb_dat_o[7:0] <= sram_data_i_reg[7:0];
-          if (~sram_be_n[1]) wb_dat_o[15:8] <= sram_data_i_reg[15:8];
-          if (~sram_be_n[2]) wb_dat_o[23:16] <= sram_data_i_reg[23:16];
-          if (~sram_be_n[3]) wb_dat_o[31:24] <= sram_data_i_reg[31:24];
-
-          ram_oe_n_reg <= 1'b1; // Disable output
-          ram_ce_n_reg <= 1'b1; // Disable SRAM
-          wb_ack_o <= 1'b1; // Acknowledge the read operation
-          state <= STATE_DONE;
-        end
-
-        STATE_WRITE: begin
-          // Setup for writing to SRAM
-          ram_we_n_reg <= 1'b0; // Write enable
-          sram_data_i_reg <= sram_data;
-          state <= STATE_WRITE_2;
-        end
-
-STATE_WRITE_2: begin
-  // ??????????????? sram_be_n ?????????��???????? (wb_dat_i) ????????????? (sram_data_i_reg)
-  if (~sram_be_n[0])
-    sram_data_o_reg[7:0] <= wb_dat_i[7:0];  // ��????????
-  else
-    sram_data_o_reg[7:0] <= sram_data_i_reg[7:0]; // ??????????
-  
-  if (~sram_be_n[1])
-    sram_data_o_reg[15:8] <= wb_dat_i[15:8];
-  else
-    sram_data_o_reg[15:8] <= sram_data_i_reg[15:8];
-  
-  if (~sram_be_n[2])
-    sram_data_o_reg[23:16] <= wb_dat_i[23:16];
-  else
-    sram_data_o_reg[23:16] <= sram_data_i_reg[23:16];
-  
-  if (~sram_be_n[3])
-    sram_data_o_reg[31:24] <= wb_dat_i[31:24];
-  else
-    sram_data_o_reg[31:24] <= sram_data_i_reg[31:24];
-
-  // ??????????????��??????????????????? sram_data ????
-  sram_data_t_reg <= 1'b0; // Ensure driving sram_data
-  state <= STATE_WRITE_3;
-end
-
-        STATE_WRITE_3: begin
-          // Finish the write cycle
-          ram_ce_n_reg <= 1'b1; // Disable SRAM
-          sram_data_t_reg <= 1'b1; // Set data bus to high-Z
-          wb_ack_o <= 1'b1; // Acknowledge the write operation
-          ram_we_n_reg <= 1'b1; // Disable write (???��????)
-          state <= STATE_DONE;
-        end
-
-        STATE_DONE: begin
-          // Complete the cycle and reset acknowledgment
-          wb_ack_o <= 1'b0; // Reset acknowledgment
-          state <= STATE_IDLE; // Return to idle state
-        end
-
-        default: state <= STATE_IDLE;
-      endcase
+    // State transition logic
+    always @(posedge clk_i or posedge rst_i) begin
+        if (rst_i)
+            state <= IDLE;
+        else
+            state <= next_state;
     end
-  end
+
+    // Next state logic
+    always @(*) begin
+        next_state = state;
+        case (state)
+            IDLE: begin
+                if (Mem_Read_in)
+                    next_state = READ;
+                else if (Mem_write_in)
+                    next_state = WRITE;
+            end
+            READ: begin
+                if (wb_ack_i)
+                    next_state = IDLE;
+            end
+            WRITE: begin
+                if (wb_ack_i)
+                    next_state = IDLE;
+            end
+            default: next_state = IDLE;
+        endcase
+    end
+
+    // Output logic and register updates
+    always @(posedge clk_i or posedge rst_i) begin
+        if (rst_i) begin
+            // Reset outputs and registers
+            wb_cyc_o <= 1'b0;
+            wb_stb_o <= 1'b0;
+            wb_we_o  <= 1'b0;
+            wb_adr_o <= {ADDR_WIDTH{1'b0}};
+            wb_dat_o <= {DATA_WIDTH{1'b0}};
+            wb_sel_o <= {DATA_WIDTH/8{1'b0}};
+            addr_reg <= {ADDR_WIDTH{1'b0}};
+            data_reg <= {DATA_WIDTH{1'b0}};
+            sel_reg  <= {DATA_WIDTH/8{1'b0}};
+            we_reg   <= 1'b0;
+            size_reg <= 1'b0;
+            read_data_reg <= {DATA_WIDTH{1'b0}};
+        end else begin
+            case (state)
+                IDLE: begin
+                    wb_cyc_o <= 1'b0;
+                    wb_stb_o <= 1'b0;
+                    wb_we_o  <= 1'b0;
+                    if (Mem_Read_in || Mem_write_in) begin
+                        // Capture inputs
+                        addr_reg <= Mem_addr_in;
+                        we_reg   <= Mem_write_in;
+                        size_reg <= Mem_size_in;
+                        wb_adr_o <= Mem_addr_in;
+                        wb_we_o  <= Mem_write_in;
+                        wb_cyc_o <= 1'b1;
+                        wb_stb_o <= 1'b1;
+
+                        // Determine byte enables and data
+                        if (Mem_size_in == 1'b0) begin // Byte access
+                            case (Mem_addr_in[1:0])
+                                2'b00: begin
+                                    sel_reg <= 4'b0001;
+                                    if (Mem_write_in)
+                                        wb_dat_o <= {24'b0, Mem_data_in[7:0]};
+                                end
+                                2'b01: begin
+                                    sel_reg <= 4'b0010;
+                                    if (Mem_write_in)
+                                        wb_dat_o <= {16'b0, Mem_data_in[7:0], 8'b0};
+                                end
+                                2'b10: begin
+                                    sel_reg <= 4'b0100;
+                                    if (Mem_write_in)
+                                        wb_dat_o <= {8'b0, Mem_data_in[7:0], 16'b0};
+                                end
+                                2'b11: begin
+                                    sel_reg <= 4'b1000;
+                                    if (Mem_write_in)
+                                        wb_dat_o <= {Mem_data_in[7:0], 24'b0};
+                                end
+                            endcase
+                        end else begin // Word access
+                            sel_reg <= 4'b1111;
+                            if (Mem_write_in)
+                                wb_dat_o <= Mem_data_in;
+                        end
+                        wb_sel_o <= sel_reg;
+                    end
+                end
+                READ: begin
+                    wb_cyc_o <= 1'b1;
+                    wb_stb_o <= 1'b1;
+                    wb_we_o  <= 1'b0;
+                    wb_adr_o <= addr_reg;
+                    wb_sel_o <= sel_reg;
+                    if (wb_ack_i) begin
+                        wb_cyc_o <= 1'b0;
+                        wb_stb_o <= 1'b0;
+                        // Handle read data
+                        if (size_reg == 1'b0) begin // Byte access
+                            case (addr_reg[1:0])
+                                2'b00: read_data_reg <= {{24{wb_dat_i[7]}}, wb_dat_i[7:0]};
+                                2'b01: read_data_reg <= {{24{wb_dat_i[15]}}, wb_dat_i[15:8]};
+                                2'b10: read_data_reg <= {{24{wb_dat_i[23]}}, wb_dat_i[23:16]};
+                                2'b11: read_data_reg <= {{24{wb_dat_i[31]}}, wb_dat_i[31:24]};
+                            endcase
+                        end else begin // Word access
+                            read_data_reg <= wb_dat_i;
+                        end
+                    end
+                end
+                WRITE: begin
+                    wb_cyc_o <= 1'b1;
+                    wb_stb_o <= 1'b1;
+                    wb_we_o  <= 1'b1;
+                    wb_adr_o <= addr_reg;
+                    wb_sel_o <= sel_reg;
+                    wb_dat_o <= wb_dat_o; // Data assigned in IDLE state
+                    if (wb_ack_i) begin
+                        wb_cyc_o <= 1'b0;
+                        wb_stb_o <= 1'b0;
+                    end
+                end
+                default: begin
+                    wb_cyc_o <= 1'b0;
+                    wb_stb_o <= 1'b0;
+                    wb_we_o  <= 1'b0;
+                end
+            endcase
+        end
+    end
+
+    // Output data to CPU
+    assign Mem_data_out = read_data_reg;
+
+    // Stall signal (stall when memory access is in progress)
+    assign stall_and_flush_out[0] = (state != IDLE);
+
+    // Flush signal (not used in this module)
+    assign stall_and_flush_out[1] = 1'b0;
+
 endmodule

@@ -9,8 +9,6 @@ module PC_ADDER #(
     input  wire [ADDR_WIDTH-1:0] PC_in,  
     output wire [ADDR_WIDTH-1:0] PC_out
 );
-    always_comb begin : 
-        PC_out = PC_in + 4;
-    end
+    assign PC_out = PC_in + 4;
 
 endmodule

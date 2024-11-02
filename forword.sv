@@ -5,11 +5,9 @@ module Forward #(
     parameter ADDR_WIDTH = 32,         // Address width
     parameter DATA_WIDTH = 32          // Data width
 )(
-    output wire [DATA_WIDTH-1:0] Forward_op1,
-    output wire [DATA_WIDTH-1:0] Forward_op2,
+    output reg [1:0] Forward_op1,
+    output reg [1:0] Forward_op2,
 
-    input  wire [DATA_WIDTH-1:0] IDEX_rs1_data,
-    input  wire [DATA_WIDTH-1:0] IDEX_rs2_data,
     input  wire [4:0] IDEX_rs1_addr, 
     input  wire [4:0] IDEX_rs2_addr, 
 
@@ -23,13 +21,24 @@ module Forward #(
     input  wire MEMWBRegWrite,
     input  wire EXMEMRegWrite
 );
-    always_comb begin : 
-    Forward_op1 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs1_addr)) ? EXMEM_rd_data :
-                         (MEMWBRegWrite && (MEMWB_rd_addr != 0) && (MEMWB_rd_addr == IDEX_rs1_addr)) ? MEMWB_rd_data :
-                         IDEX_rs1_data;
+    always_comb begin
+        Forward_op1 = 2'b00; // Default: no forwarding
+        Forward_op2 = 2'b00; // Default: no forwarding
 
-    Forward_op2 = (EXMEMRegWrite && (EXMEM_rd_addr != 0) && (EXMEM_rd_addr == IDEX_rs2_addr)) ? EXMEM_rd_data :
-                         (MEMWBRegWrite && (MEMWB_rd_addr != 0) && (MEMWB_rd_addr == IDEX_rs2_addr)) ? MEMWB_rd_data :
-                         IDEX_rs2_data;
+        // Forwarding from EX/MEM stage
+        if (EXMEMRegWrite && (IDEX_rs1_addr != 5'b00000) && (IDEX_rs1_addr == EXMEM_rd_addr)) begin
+            Forward_op1 = 2'b01; // Forward from EX/MEM
+        end
+        if (EXMEMRegWrite && (IDEX_rs2_addr != 5'b00000) && (IDEX_rs2_addr == EXMEM_rd_addr)) begin
+            Forward_op2 = 2'b01; // Forward from EX/MEM
+        end
+
+        // Forwarding from MEM/WB stage
+        if (MEMWBRegWrite && (IDEX_rs1_addr != 5'b00000) && (IDEX_rs1_addr == MEMWB_rd_addr)) begin
+            Forward_op1 = 2'b10; // Forward from MEM/WB
+        end
+        if (MEMWBRegWrite && (IDEX_rs2_addr != 5'b00000) && (IDEX_rs2_addr == MEMWB_rd_addr)) begin
+            Forward_op2 = 2'b10; // Forward from MEM/WB
+        end
     end
 endmodule

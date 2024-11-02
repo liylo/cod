@@ -28,6 +28,8 @@ module Controler(
                            // 0: Disable writing to memory
     output reg MemRead,    // 1: Enable reading from memory
                            // 0: Disable reading from memory
+    output reg MemSize,    // 1: 32-bit memory access
+                           // 0: 8-bit memory access
     output reg Branch,     // 1: Enable branch operation
                            // 0: Disable branch operation
     output reg ALUSrc,     // 1: ALU second operand is an immediate value
@@ -57,6 +59,7 @@ module Controler(
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
+                MemSize  = 1'b1;
                 Branch   = 1'b0;
                 ALUSrc   = 1'b0;
 
@@ -78,6 +81,7 @@ module Controler(
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
+                MemSize  = 1'b1;
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
 
@@ -105,6 +109,12 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
                 ALUOp    = ADD;
+
+                case ({funct3})
+                    3'b000: MemSize = 1'b0; // 8-bit lb
+                    3'b010: MemSize = 1'b1; // 32-bit lw
+                endcase
+                
             end
 
             OPCODE_STORE: begin
@@ -115,6 +125,11 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
                 ALUOp    = ADD;
+
+                case ({funct3})
+                    3'b000: MemSize = 1'b0; // 8-bit sb
+                    3'b010: MemSize = 1'b1; // 32-bit sw
+                endcase
             end
 
             OPCODE_BRANCH: begin
@@ -125,6 +140,7 @@ module Controler(
                 Branch   = 1'b1;
                 ALUSrc   = 1'b0;
                 ALUOp    = SUB;
+                MemSize  = 1'b1;
             end
 
             OPCODE_JALR: begin
@@ -135,6 +151,7 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
                 ALUOp    = ADD;
+                MemSize  = 1'b1;
             end
 
             OPCODE_JAL: begin
@@ -145,6 +162,7 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b0;
                 ALUOp    = ADD;
+                MemSize  = 1'b1;
             end
 
             OPCODE_LUI: begin
@@ -155,6 +173,7 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
                 ALUOp    = ADD;
+                MemSize  = 1'b1;
             end
 
             OPCODE_AUIPC: begin
@@ -165,6 +184,7 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b1;
                 ALUOp    = ADD;
+                MemSize  = 1'b1;
             end
 
             default: begin
@@ -175,6 +195,7 @@ module Controler(
                 Branch   = 1'b0;
                 ALUSrc   = 1'b0;
                 ALUOp    = ADD;
+                MemSize  = 1'b1;
             end
         endcase
     end
