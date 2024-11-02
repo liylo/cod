@@ -40,7 +40,7 @@ module Branch #(
             branch_out  <= PC_ADDR;
             use_branch  <= 0;
         end else begin
-            if (branch[1] ~^ branch_condition_result) begin
+            if (branch[1] ~^ branch_condition_result) && branch[0] begin
                 flush      <= 1'b1;
                 branch_out <= Next_PC;
                 use_branch <= 1;
