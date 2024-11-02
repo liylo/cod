@@ -20,7 +20,7 @@ module Controler(
 
     input wire [31:0] instruction,
 
-    output reg MemtoReg,   // 1: Write data from memory to register
+    output reg [1:0] MemtoReg ,   // 1: Write data from memory to register
                            // 0: Write data from ALU to register
     output reg RegWrite,   // 1: Enable writing to the register file
                            // 0: Disable writing to the register file
@@ -56,7 +56,7 @@ module Controler(
     always_comb begin
         case (opcode)
             OPCODE_R_TYPE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -78,7 +78,7 @@ module Controler(
             end
 
             OPCODE_I_TYPE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -103,7 +103,7 @@ module Controler(
             end
 
             OPCODE_LOAD: begin
-                MemtoReg = 1'b1;
+                MemtoReg = 2'b10;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b1;
@@ -120,7 +120,7 @@ module Controler(
             end
 
             OPCODE_STORE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b1;
                 MemRead  = 1'b0;
@@ -136,7 +136,7 @@ module Controler(
             end
 
             OPCODE_BRANCH: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -152,7 +152,7 @@ module Controler(
             end
 
             OPCODE_JALR: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -163,7 +163,7 @@ module Controler(
             end
 
             OPCODE_JAL: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -174,7 +174,7 @@ module Controler(
             end
 
             OPCODE_LUI: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -185,7 +185,7 @@ module Controler(
             end
 
             OPCODE_AUIPC: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
@@ -196,7 +196,7 @@ module Controler(
             end
 
             default: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;

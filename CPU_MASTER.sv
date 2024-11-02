@@ -113,7 +113,7 @@ module cpu_master #(
     );
 
     // ID stage signals
-    wire ID_MemtoReg;
+    wire [1:0] ID_MemtoReg;
     wire ID_RegWrite;
     wire ID_MemWrite;
     wire ID_MemRead;
@@ -216,7 +216,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     );
 
     // ID/EX stage signals
-    wire IDEX_MemtoReg;
+    wire [1:0] IDEX_MemtoReg;
     wire IDEX_RegWrite;
     wire IDEX_MemWrite;
     wire IDEX_MemRead;
@@ -295,7 +295,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .forward(EX_forward_A),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc[0]),
+        .which_mux(IDEX_ALUSrc[1]),
         .pc_or_imm_in(IDEX_PC),
         .reg_in(IDEX_rdata_a),
         .alu_mux_out(EX_alu_a)
@@ -309,7 +309,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .forward(EX_forward_B),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc[1]),
+        .which_mux(IDEX_ALUSrc[0]),
         .pc_or_imm_in(IDEX_imm),
         .reg_in(IDEX_rdata_b),
         .alu_mux_out(EX_alu_b)
@@ -348,7 +348,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
 
 
     // EXMEM stage signals
-    wire EXMEM_MemtoReg;
+    wire [1:0] EXMEM_MemtoReg;
     wire EXMEM_RegWrite;
     wire EXMEM_MemWrite;
     wire EXMEM_MemRead;
@@ -454,7 +454,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     );
 
     // MEMWB stage signals
-    wire MEMWB_MemtoReg;
+    wire [1:0] MEMWB_MemtoReg;
     wire MEMWB_RegWrite;
     wire [ADDR_WIDTH-1:0] MEMWB_PC;
     wire [DATA_WIDTH-1:0] MEMWB_ALU_result;
@@ -494,8 +494,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH)
     ) wb_reg_mux (
-        // TODO use real values
-        .which_mux({MEMWB_MemtoReg,MEMWB_MemtoReg}),
+        .which_mux(MEMWB_MemtoReg),
         .mem_in(MEMWB_memory_data),
         .alu_in(MEMWB_ALU_result),
         .reg_out(WB_wdata),
