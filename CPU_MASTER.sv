@@ -129,7 +129,6 @@ module cpu_master #(
     wire ID_imm_type;
     wire [4:0] ID_waddr;
 
-    wire [4:0] MEMWB_rf_waddr;
     wire [DATA_WIDTH-1:0] WB_wdata;
     wire [DATA_WIDTH-1:0] ID_rf_rdata_a;
     wire [DATA_WIDTH-1:0] ID_rf_rdata_b;
@@ -186,7 +185,7 @@ module cpu_master #(
 
 ID_REG_IN_MUX id_reg_in_mux1 (
 .read_addr(ID_rs1),
-.write_addr(MEMWB_rf_waddr),
+.write_addr(MEMWB_waddr),
  .write_enable(MEMWB_RegWrite),
 
 .write_data(WB_wdata),
@@ -197,7 +196,7 @@ ID_REG_IN_MUX id_reg_in_mux1 (
 
 ID_REG_IN_MUX id_reg_in_mux2 (
 .read_addr(ID_rs2),
-.write_addr(MEMWB_rf_waddr),
+.write_addr(MEMWB_waddr),
  .write_enable(MEMWB_RegWrite),
 
 .write_data(WB_wdata),
@@ -213,7 +212,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .rf_rdata_a(ID_rf_rdata_a),
         .rf_raddr_b(ID_rs2),
         .rf_rdata_b(ID_rf_rdata_b),
-        .rf_waddr(MEMWB_rf_waddr),
+        .rf_waddr(MEMWB_waddr),
         .rf_wdata(WB_wdata),
         .rf_we(MEMWB_RegWrite)
     );
@@ -277,7 +276,11 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .MemSize_out(IDEX_MemSize),
         .Branch_out(IDEX_Branch),
         .imm_type_out(IDEX_imm_type),
-        .imm_out(IDEX_imm)
+        .imm_out(IDEX_imm),
+
+        .rs1_addr_out(IDEX_rs1),
+        .rs2_addr_out(IDEX_rs2),
+        .rd_addr_out(IDEX_rd)
     );
 
     // EX stage signals
@@ -343,6 +346,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .IDEX_rs2_addr(IDEX_rs2),
         .EXMEM_rd_addr(EXMEM_rd_addr),
         .MEMWB_rd_addr(MEMWB_rd_addr),
+
         .MEMWBRegWrite(MEMWB_RegWrite),
         .EXMEMRegWrite(IDEX_RegWrite)
     ) ;
