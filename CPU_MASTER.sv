@@ -494,7 +494,8 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH)
     ) wb_reg_mux (
-        .which_mux(MEMWB_MemtoReg),
+        // TODO use real values
+        .which_mux({MEMWB_MemtoReg,MEMWB_MemtoReg}),
         .mem_in(MEMWB_memory_data),
         .alu_in(MEMWB_ALU_result),
         .reg_out(WB_wdata),
