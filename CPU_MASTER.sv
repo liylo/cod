@@ -295,7 +295,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .forward(EX_forward_A),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc[0]),
+        .which_mux(IDEX_ALUSrc[1]),
         .pc_or_imm_in(IDEX_PC),
         .reg_in(IDEX_rdata_a),
         .alu_mux_out(EX_alu_a)
@@ -309,7 +309,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .forward(EX_forward_B),
         .exmem_data(EXMEM_ALU_result),
         .memwb_data(WB_wdata),
-        .which_mux(IDEX_ALUSrc[1]),
+        .which_mux(IDEX_ALUSrc[0]),
         .pc_or_imm_in(IDEX_imm),
         .reg_in(IDEX_rdata_b),
         .alu_mux_out(EX_alu_b)
