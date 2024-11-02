@@ -32,8 +32,8 @@ module cpu_master #(
     wire [ADDR_WIDTH-1:0] IF_PC_new;
     wire [ADDR_WIDTH-1:0] IF_PC_reg;
     wire [ADDR_WIDTH-1:0] IF_instr;
-    wire [1:0] IF_flush_and_bubble;
-    wire [1:0] IF_stall_and_flush;
+    wire [1:0] PC_flush_and_bubble;
+    wire  IF_stall_and_flush;
     
   
 
@@ -58,7 +58,7 @@ module cpu_master #(
         .clk(clk),
         .reset(reset),
         .PC_new_reg_in(IF_PC_new),
-        .stall_and_flush(IF_flush_and_bubble),
+        .stall_and_flush(PC_flush_and_bubble),
         .PC_reg_out(IF_PC_reg)
     );
 
@@ -134,7 +134,7 @@ module cpu_master #(
     wire [DATA_WIDTH-1:0] ID_rf_rdata_a;
     wire [DATA_WIDTH-1:0] ID_rf_rdata_b;
 
-    wire [2:0] ID_stall_and_flush;
+    wire  ID_stall_and_flush;
 
 
 
@@ -181,6 +181,31 @@ module cpu_master #(
     .waddr(ID_waddr)
 );
 
+    wire [DATA_WIDTH-1:0] ID_final_rdata_a;
+    wire [DATA_WIDTH-1:0] ID_final_rdata_b;
+
+ID_REG_IN_MUX id_reg_in_mux1 (
+.read_addr(ID_rs1),
+.write_addr(MEMWB_rf_waddr),
+ .write_enable(MEMWB_RegWrite),
+
+.write_data(WB_wdata),
+.read_data(ID_rf_rdata_a),
+
+   .final_data(ID_final_rdata_a)
+);
+
+ID_REG_IN_MUX id_reg_in_mux2 (
+.read_addr(ID_rs2),
+.write_addr(MEMWB_rf_waddr),
+ .write_enable(MEMWB_RegWrite),
+
+.write_data(WB_wdata),
+.read_data(ID_rf_rdata_b),
+
+   .final_data(ID_final_rdata_b)
+);
+
     regfile regfile_unit (
         .clk(clk),
         .reset(reset),
@@ -219,20 +244,22 @@ module cpu_master #(
         .ADDR_WIDTH(ADDR_WIDTH),
         .DATA_WIDTH(DATA_WIDTH)
     ) idex (
-        .clk(clk),
-        .reset(reset),
-        .flush_and_stall(IDEX_flush_and_stall),
-        .MemtoReg(ID_MemtoReg),
-        .RegWrite(ID_RegWrite),
-        .MemWrite(ID_MemWrite),
-        .MemRead(ID_MemRead),
-        .MemSize(ID_MemSize),
+        .clk(clk),//
+        .reset(reset),//
+        .flush_and_stall(IDEX_flush_and_stall),//
+        .MemtoReg(ID_MemtoReg),//
+        .RegWrite(ID_RegWrite),//
+        .MemtoReg_out(IDEX_MemtoReg),//
+        .RegWrite_out(IDEX_RegWrite),//
+        .MemWrite(ID_MemWrite),//
+        .MemRead(ID_MemRead),//
         .Branch(ID_Branch),
+        .MemSize(ID_MemSize),
         .ALUSrc(ID_ALUSrc),
         .ALUOp(ID_ALUOp),
         .PC_in(IFID_PC),
-        .rs1_data(ID_rf_rdata_a),
-        .rs2_data(ID_rf_rdata_b),
+        .rs1_data(ID_final_rdata_a),
+        .rs2_data(ID_final_rdata_b),
         .rs1_addr(ID_rs1),
         .rs2_addr(ID_rs2),
         .rd_addr(ID_rd),
@@ -245,8 +272,6 @@ module cpu_master #(
         .waddr_out(IDEX_waddr),
         .ALUOp_out(IDEX_ALUOp),
         .ALUSrc_out(IDEX_ALUSrc),
-        .MemtoReg_out(IDEX_MemtoReg),
-        .RegWrite_out(IDEX_RegWrite),
         .MemWrite_out(IDEX_MemWrite),
         .MemRead_out(IDEX_MemRead),
         .MemSize_out(IDEX_MemSize),
@@ -314,8 +339,6 @@ module cpu_master #(
     ) forward_unit (
         .Forward_op1(EX_forward_A),
         .Forward_op2(EX_forward_B),
-        .IDEX_rs1_data(IDEX_rdata_a),
-        .IDEX_rs2_data(IDEX_rdata_b),
         .IDEX_rs1_addr(IDEX_rs1),
         .IDEX_rs2_addr(IDEX_rs2),
         .EXMEM_rd_addr(EXMEM_rd_addr),
@@ -389,8 +412,8 @@ module cpu_master #(
     wire MEM_branch_flush;
     wire [ADDR_WIDTH-1:0] MEM_Branch_pc;
     wire MEM_branch;
-    wire MEM_memory_data;
-    wire [1:0] MEM_flush_and_stall;
+    wire [31:0] MEM_memory_data;
+    wire  MEM_flush_and_stall;
 
 
     // MEM stage module
@@ -404,7 +427,7 @@ module cpu_master #(
         .flush(MEM_branch_flush),
         .branch(EXMEM_Branch),
         .Next_PC(EXMEM_Next_PC),
-        .branch_condition_result(EXMEM_ALU_result),
+        .ALU_result(EXMEM_ALU_result),
         .branch_out(MEM_Branch_pc),
         .use_branch(MEM_branch)
     );
@@ -479,9 +502,9 @@ module cpu_master #(
         .DATA_WIDTH(DATA_WIDTH)
     ) wb_reg_mux (
         .which_mux(MEMWB_MemtoReg),
-        .memwb_data(MEMWB_memory_data),
-        .memwb_alu_result(MEMWB_ALU_result),
-        .wb_wdata(WB_wdata),
+        .mem_in(MEMWB_memory_data),
+        .alu_in(MEMWB_ALU_result),
+        .reg_out(WB_wdata),
         .PC_reg_in(MEMWB_PC)
     );
 
@@ -492,14 +515,16 @@ module cpu_master #(
         .DATA_WIDTH(DATA_WIDTH)
     ) sfcontrol (
         .IFID_stall_and_flush(IFID_flush_and_stall),
-        .IDEX_stall_and_flush(ID_stall_and_flush),
+        .IDEX_stall_and_flush(IDEX_flush_and_stall),
         .EXMEM_stall_and_flush(EXMEM_flush_and_stall),
         .MEMWB_stall_and_flush(MEMWB_flush_and_stall),
-        .PC_stall_and_flush(MEMWB_flush_and_stall),
         .branch(MEM_branch_flush),
         .mem(MEM_flush_and_stall),
         .im(IF_stall_and_flush),
-        .hazard(ID_stall_and_flush)
+        .hazard(ID_stall_and_flush),
+        .PC_stall_and_flush(PC_flush_and_bubble),
+        .clk(clk),
+        .reset(reset)
     );
 
 
