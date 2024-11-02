@@ -18,7 +18,7 @@ module Branch #(
     output reg flush,                      // 1: Flush the pipeline due to branch taken
                                            // 0: Do not flush the pipeline
 
-    input wire branch,                     // 1: Current instruction is a branch
+    input wire [2:0] branch,                     // 1: Current instruction is a branch
                                            // 0: Current instruction is not a branch
 
     input wire [DATA_WIDTH-1:0] Next_PC,   // Calculated branch target address
@@ -40,7 +40,7 @@ module Branch #(
             branch_out  <= PC_ADDR;
             use_branch  <= 0;
         end else begin
-            if (branch && branch_condition_result) begin
+            if (branch[1] XNOR branch_condition_result) begin
                 flush      <= 1'b1;
                 branch_out <= Next_PC;
                 use_branch <= 1;

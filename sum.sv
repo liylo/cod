@@ -9,14 +9,18 @@ module SUM #(
     input wire [DATA_WIDTH-1:0] reg_a_in,
     input wire [DATA_WIDTH-1:0] imm,
 
-    input wire branch,
+    input wire [2:0] branch, // 0: branch, 1: eq, 2: jump
 
     output reg [ADDR_WIDTH-1:0] PC_reg_out
 );
     
         always_comb begin
-            if (branch) begin
+            if (branch[0]) begin
                 PC_reg_out = PC_reg_in + imm;
+            end
+            else if (branch[2]) begin
+                // jalr
+                PC_reg_out = reg_a_in + imm;
             end else begin
                 PC_reg_out = PC_reg_in + 4;
             end

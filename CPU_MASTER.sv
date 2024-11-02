@@ -118,7 +118,7 @@ module cpu_master #(
     wire ID_MemWrite;
     wire ID_MemRead;
     wire ID_MemSize;
-    wire ID_Branch;
+    wire [2:0] ID_Branch;
     wire [1:0] ID_ALUSrc;
     wire [3:0] ID_ALUOp;
 
@@ -221,7 +221,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire IDEX_MemWrite;
     wire IDEX_MemRead;
     wire IDEX_MemSize;
-    wire IDEX_Branch;
+    wire [2:0] IDEX_Branch;
     wire [1:0] IDEX_ALUSrc;
     wire [3:0] IDEX_ALUOp;
     wire [DATA_WIDTH-1:0] IDEX_rdata_a;
@@ -353,7 +353,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire EXMEM_MemWrite;
     wire EXMEM_MemRead;
     wire EXMEM_MemSize;
-    wire EXMEM_Branch;
+    wire [2:0] EXMEM_Branch;
     wire [ADDR_WIDTH-1:0] EXMEM_PC;
     wire [ADDR_WIDTH-1:0] EXMEM_Next_PC;
     wire [DATA_WIDTH-1:0] EXMEM_ALU_result;
