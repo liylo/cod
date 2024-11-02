@@ -109,7 +109,7 @@ module final_top (
     assign sys_clk = clk_10M;
     assign sys_rst = reset_of_clk10M;
 
-    // 本实验不使用 CPLD 串口，禁用防止总线冲突
+    // 本实验不使用 CPLD 串口，禁用防止�?�线冲突
     assign uart_rdn = 1'b1;
     assign uart_wrn = 1'b1;
 
@@ -174,7 +174,7 @@ module final_top (
     wire        wbm_stb_o;
     wire        wbm_ack_i;
 
-    arbiter #(
+    wb_arbiter_2 #(
         .DATA_WIDTH(32),
         .ADDR_WIDTH(32),
         .SELECT_WIDTH(4),

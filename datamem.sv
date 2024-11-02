@@ -13,7 +13,7 @@ module MEMORY #(
     input wire rst_i, 
 
     // Stall and flush signals
-    output wire [1:0] stall_and_flush_out,
+    output wire  stall_and_flush_out,
 
     // Wishbone interface
     output reg wb_cyc_o,
@@ -43,7 +43,6 @@ module MEMORY #(
 
     // Internal registers
     reg [ADDR_WIDTH-1:0] addr_reg;
-    reg [DATA_WIDTH-1:0] data_reg;
     reg [DATA_WIDTH/8-1:0] sel_reg;
     reg we_reg;
     reg size_reg;
@@ -90,7 +89,7 @@ module MEMORY #(
             wb_dat_o <= {DATA_WIDTH{1'b0}};
             wb_sel_o <= {DATA_WIDTH/8{1'b0}};
             addr_reg <= {ADDR_WIDTH{1'b0}};
-            data_reg <= {DATA_WIDTH{1'b0}};
+
             sel_reg  <= {DATA_WIDTH/8{1'b0}};
             we_reg   <= 1'b0;
             size_reg <= 1'b0;
@@ -190,9 +189,7 @@ module MEMORY #(
     assign Mem_data_out = read_data_reg;
 
     // Stall signal (stall when memory access is in progress)
-    assign stall_and_flush_out[0] = (state != IDLE);
+    assign stall_and_flush_out = (state != IDLE);
 
-    // Flush signal (not used in this module)
-    assign stall_and_flush_out[1] = 1'b0;
 
 endmodule

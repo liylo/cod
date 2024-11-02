@@ -19,7 +19,7 @@ module IM #(
     input  wire [ADDR_WIDTH-1:0] PC_addr,
     output reg  [DATA_WIDTH-1:0] instruction,
 
-    output wire [1:0] stall_and_flush,
+    output wire  stall_and_flush,
 
     // Wishbone master interface
     output reg wb_cyc_o,
@@ -31,7 +31,7 @@ module IM #(
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
     output reg wb_we_o
 );
-    reg [1:0] stall_and_flush_reg;
+    reg stall_and_flush_reg;
     // State machine states
     typedef enum logic [1:0] {
         IDLE = 2'b00,
@@ -59,7 +59,7 @@ module IM #(
                     wb_sel_o <= {(DATA_WIDTH/8){1'b1}};
                     wb_adr_o <= PC_addr;
                     state <= READ;
-                    stall_and_flush_reg <= 2'b10;
+                    stall_and_flush_reg <= 1'b1;
                 end
                 READ: begin
                     if (wb_ack_i) begin
@@ -67,7 +67,7 @@ module IM #(
                         wb_cyc_o <= 1'b0;
                         wb_stb_o <= 1'b0;
                         state <= IDLE;
-                        stall_and_flush_reg <= 2'b00;
+                        stall_and_flush_reg <= 1'b0;
                     end
                 end
             endcase
