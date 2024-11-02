@@ -30,11 +30,14 @@ module EXMEMREG #(
     input wire MemWrite,
     input wire MemRead, 
     input wire Branch,
+    input wire MemSize,
 
     output reg MemWrite_out,   // 1: Enable writing to memory
                                // 0: Disable writing to memory
     output reg MemRead_out,    // 1: Enable reading from memory
                                // 0: Disable reading from memory
+    output reg MemSize_out,    // 1: 32-bit memory access
+                               // 0: 8-bit memory access
     output reg Branch_out,     // 1: Enable branch operation
                                // 0: Disable branch operation
 
@@ -44,6 +47,7 @@ module EXMEMREG #(
     input wire [DATA_WIDTH-1:0] ALU_result_in,
     input wire [DATA_WIDTH-1:0] rs1_data,
     input wire [DATA_WIDTH-1:0] rs2_data,
+    input wire [4:0] waddr,  // Source register 1 index
     input wire [4:0] rs1_addr,  // Source register 1 index
     input wire [4:0] rs2_addr,  // Source register 2 index
     input wire [4:0] rd_addr,   // Destination register index
@@ -53,6 +57,7 @@ module EXMEMREG #(
     output reg [DATA_WIDTH-1:0] ALU_result_out,
     output reg [DATA_WIDTH-1:0] rs1_data_out,
     output reg [DATA_WIDTH-1:0] rs2_data_out,
+    output reg [4:0] waddr_out,    
     output reg [4:0] rs1_addr_out, // Source register 1 index
     output reg [4:0] rs2_addr_out, // Source register 2 index
     output reg [4:0] rd_addr_out   // Destination register index
@@ -70,6 +75,7 @@ module EXMEMREG #(
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             PC_out         <= PC_ADDR;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
@@ -79,12 +85,14 @@ module EXMEMREG #(
             rs1_addr_out   <= 5'b00000;
             rs2_addr_out   <= 5'b00000;
             rd_addr_out    <= 5'b00000;
+            waddr_out      <= 5'b00000;
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
             MemtoReg_out   <= 1'b0;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             PC_out         <= PC_in;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
@@ -94,12 +102,14 @@ module EXMEMREG #(
             rs1_addr_out   <= 5'b00000;
             rs2_addr_out   <= 5'b00000;
             rd_addr_out    <= 5'b00000;
+            waddr_out      <= 5'b00000;
         end else if (!stall) begin
             // Update all outputs with input values
             MemtoReg_out   <= MemtoReg;
             RegWrite_out   <= RegWrite;
             MemWrite_out   <= MemWrite;
             MemRead_out    <= MemRead;
+            MemSize_out    <= MemSize;
             Branch_out     <= Branch;
             PC_out         <= PC_in;
             Next_PC_out    <= Next_PC_in;
@@ -109,6 +119,7 @@ module EXMEMREG #(
             rs1_addr_out   <= rs1_addr;
             rs2_addr_out   <= rs2_addr;
             rd_addr_out    <= rd_addr;
+            waddr_out      <= waddr;
         end
         // If stall is asserted, hold the current values (do nothing)
     end

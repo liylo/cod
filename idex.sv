@@ -31,11 +31,14 @@ module IDEXREG #(
     input wire MemWrite,
     input wire MemRead,
     input wire Branch,
+    input wire MemSize,
 
     output reg MemWrite_out,   // 1: Enable writing to memory
                                // 0: Disable writing to memory
     output reg MemRead_out,    // 1: Enable reading from memory
                                // 0: Disable reading from memory
+    output reg MemSize_out,    // 1: 32-bit memory access
+                               // 0: 8-bit memory access
     output reg Branch_out,     // 1: Enable branch operation
                                // 0: Disable branch operation
 
@@ -55,6 +58,8 @@ module IDEXREG #(
     input wire [4:0] rs1_addr,  // Source register 1 index
     input wire [4:0] rs2_addr,  // Source register 2 index
     input wire [4:0] rd_addr,   // Destination register index
+    input wire [4:0] waddr,
+    output reg [4:0] waddr_out,
 
     input wire imm_type,
     input wire [DATA_WIDTH-1:0] imm,
@@ -84,6 +89,7 @@ module IDEXREG #(
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             ALUOp_out      <= 4'b0000;
             ALUSrc_out     <= 1'b0;
@@ -95,12 +101,14 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
+            waddr_out      <= 5'b00000;
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
             MemtoReg_out   <= 1'b0;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
+            MemSize_out    <= 1'b1;
             Branch_out     <= 1'b0;
             ALUOp_out      <= 4'b0000;
             ALUSrc_out     <= 1'b0;
@@ -112,12 +120,14 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
+            waddr_out      <= 5'b00000;
         end else if (!stall) begin
             // Update all outputs with input values
             MemtoReg_out   <= MemtoReg;
             RegWrite_out   <= RegWrite;
             MemWrite_out   <= MemWrite;
             MemRead_out    <= MemRead;
+            MemSize_out    <= MemSize;
             Branch_out     <= Branch;
             ALUOp_out      <= ALUOp;
             ALUSrc_out     <= ALUSrc;
@@ -129,6 +139,7 @@ module IDEXREG #(
             rd_addr_out    <= rd_addr;
             imm_type_out   <= imm_type;
             imm_out        <= imm;
+            waddr_out      <= waddr;
         end
         // If stall is asserted, hold the current values (do nothing)
     end

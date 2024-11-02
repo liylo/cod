@@ -27,10 +27,12 @@ module DECODER #(
                                          // 0: No immediate value (e.g., R-type)
                                          // Non-zero: Immediate value extracted and sign-extended
 
-    output wire imm_type        // Immediate type indicator
+    output wire imm_type,        // Immediate type indicator
                                  // 1: Instruction includes an immediate value
                                  // 0: Instruction does not include an immediate value
+    output wire [4:0] waddr
 );
+    assign waddr = rd; //TODO: 为了测试，暂时这样写
     reg [4:0] rd_reg;
     reg [4:0] rs1_reg;
     reg [4:0] rs2_reg;

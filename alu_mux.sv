@@ -13,14 +13,14 @@ module ALU_MUX #(
     input  wire [DATA_WIDTH-1:0]    memwb_data,  
 
     input  wire                     which_mux,    
-    input  wire [DATA_WIDTH-1:0]    pc_in,        
+    input  wire [DATA_WIDTH-1:0]    pc_or_imm_in,        
     input  wire [DATA_WIDTH-1:0]    reg_in,      
 
-    output wire [DATA_WIDTH-1:0]    alu_mux_out   
+    output reg [DATA_WIDTH-1:0]    alu_mux_out   
 );
     always_comb begin
         alu_mux_out = (forward == 2'b01) ? exmem_data :   // Priority 1: EX/MEM forwarding
                          (forward == 2'b10) ? memwb_data :   // Priority 2: MEM/WB forwarding
-                         (which_mux) ? pc_in : reg_in; 
+                         (which_mux) ? pc_or_imm_in : reg_in; 
     end   
 endmodule
