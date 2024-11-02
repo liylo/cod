@@ -1,4 +1,4 @@
-module sram_controller #(
+module sram_controller_final #(
     parameter DATA_WIDTH      = 32,
     parameter ADDR_WIDTH      = 32,
     parameter SRAM_ADDR_WIDTH = 20,
