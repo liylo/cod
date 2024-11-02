@@ -315,7 +315,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .alu_mux_out(EX_alu_b)
     );
 
-    ALU alu_unit(
+    ALU_final alu_unit(
         .alu_op(IDEX_ALUOp),
         .A(EX_alu_a),
         .B(EX_alu_b),

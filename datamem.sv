@@ -1,4 +1,3 @@
-// TODO: 等待大改
 module MEMORY #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 32,
@@ -12,8 +11,8 @@ module MEMORY #(
     input wire clk_i, 
     input wire rst_i, 
 
-    // Stall and flush signals
-    output wire  stall_and_flush_out,
+    // Stall signal
+    output wire stall_and_flush_out,
 
     // Wishbone interface
     output reg wb_cyc_o,
@@ -43,8 +42,6 @@ module MEMORY #(
 
     // Internal registers
     reg [ADDR_WIDTH-1:0] addr_reg;
-    reg [DATA_WIDTH/8-1:0] sel_reg;
-    reg we_reg;
     reg size_reg;
     reg [DATA_WIDTH-1:0] read_data_reg;
 
@@ -65,14 +62,20 @@ module MEMORY #(
                     next_state = READ;
                 else if (Mem_write_in)
                     next_state = WRITE;
+                else
+                    next_state = IDLE;
             end
             READ: begin
                 if (wb_ack_i)
                     next_state = IDLE;
+                else
+                    next_state = READ;
             end
             WRITE: begin
                 if (wb_ack_i)
                     next_state = IDLE;
+                else
+                    next_state = WRITE;
             end
             default: next_state = IDLE;
         endcase
@@ -88,10 +91,8 @@ module MEMORY #(
             wb_adr_o <= {ADDR_WIDTH{1'b0}};
             wb_dat_o <= {DATA_WIDTH{1'b0}};
             wb_sel_o <= {DATA_WIDTH/8{1'b0}};
-            addr_reg <= {ADDR_WIDTH{1'b0}};
 
-            sel_reg  <= {DATA_WIDTH/8{1'b0}};
-            we_reg   <= 1'b0;
+            addr_reg <= {ADDR_WIDTH{1'b0}};
             size_reg <= 1'b0;
             read_data_reg <= {DATA_WIDTH{1'b0}};
         end else begin
@@ -100,10 +101,10 @@ module MEMORY #(
                     wb_cyc_o <= 1'b0;
                     wb_stb_o <= 1'b0;
                     wb_we_o  <= 1'b0;
+
                     if (Mem_Read_in || Mem_write_in) begin
                         // Capture inputs
                         addr_reg <= Mem_addr_in;
-                        we_reg   <= Mem_write_in;
                         size_reg <= Mem_size_in;
                         wb_adr_o <= Mem_addr_in;
                         wb_we_o  <= Mem_write_in;
@@ -114,32 +115,32 @@ module MEMORY #(
                         if (Mem_size_in == 1'b0) begin // Byte access
                             case (Mem_addr_in[1:0])
                                 2'b00: begin
-                                    sel_reg <= 4'b0001;
+                                    wb_sel_o <= 4'b0001;
                                     if (Mem_write_in)
                                         wb_dat_o <= {24'b0, Mem_data_in[7:0]};
                                 end
                                 2'b01: begin
-                                    sel_reg <= 4'b0010;
+                                    wb_sel_o <= 4'b0010;
                                     if (Mem_write_in)
                                         wb_dat_o <= {16'b0, Mem_data_in[7:0], 8'b0};
                                 end
                                 2'b10: begin
-                                    sel_reg <= 4'b0100;
+                                    wb_sel_o <= 4'b0100;
                                     if (Mem_write_in)
                                         wb_dat_o <= {8'b0, Mem_data_in[7:0], 16'b0};
                                 end
                                 2'b11: begin
-                                    sel_reg <= 4'b1000;
+                                    wb_sel_o <= 4'b1000;
                                     if (Mem_write_in)
                                         wb_dat_o <= {Mem_data_in[7:0], 24'b0};
                                 end
                             endcase
                         end else begin // Word access
-                            sel_reg <= 4'b1111;
+                            wb_sel_o <= 4'b1111;
                             if (Mem_write_in)
                                 wb_dat_o <= Mem_data_in;
                         end
-                        wb_sel_o <= sel_reg;
+                        // For read operations, no need to set wb_dat_o
                     end
                 end
                 READ: begin
@@ -147,7 +148,8 @@ module MEMORY #(
                     wb_stb_o <= 1'b1;
                     wb_we_o  <= 1'b0;
                     wb_adr_o <= addr_reg;
-                    wb_sel_o <= sel_reg;
+                    wb_sel_o <= wb_sel_o; // Keep the previous sel_o
+
                     if (wb_ack_i) begin
                         wb_cyc_o <= 1'b0;
                         wb_stb_o <= 1'b0;
@@ -169,8 +171,9 @@ module MEMORY #(
                     wb_stb_o <= 1'b1;
                     wb_we_o  <= 1'b1;
                     wb_adr_o <= addr_reg;
-                    wb_sel_o <= sel_reg;
-                    wb_dat_o <= wb_dat_o; // Data assigned in IDLE state
+                    wb_sel_o <= wb_sel_o; // Keep the previous sel_o
+                    wb_dat_o <= wb_dat_o; // Keep the data set in IDLE state
+
                     if (wb_ack_i) begin
                         wb_cyc_o <= 1'b0;
                         wb_stb_o <= 1'b0;
@@ -190,6 +193,5 @@ module MEMORY #(
 
     // Stall signal (stall when memory access is in progress)
     assign stall_and_flush_out = (state != IDLE);
-
 
 endmodule

@@ -109,7 +109,7 @@ module final_top (
     assign sys_clk = clk_10M;
     assign sys_rst = reset_of_clk10M;
 
-    // 本实验不使用 CPLD 串口，禁用防止�?�线冲突
+    // 本实验不使用 CPLD 串口，禁用防止�?�线冲突
     assign uart_rdn = 1'b1;
     assign uart_wrn = 1'b1;
 
@@ -249,7 +249,7 @@ module final_top (
     wire [3:0]  wbs2_sel_o;
     wire wbs2_we_o;
 
-    wb_mux_3 wb_mux (
+    wb_mux_3_final wb_mux (
         .clk(sys_clk),
         .rst(sys_rst),
 
@@ -317,7 +317,7 @@ module final_top (
     /* =========== Lab5 MUX end =========== */
 
     /* =========== Lab5 Slaves begin =========== */
-    sram_controller #(
+    sram_controller_final #(
         .SRAM_ADDR_WIDTH(20),
         .SRAM_DATA_WIDTH(32)
     ) sram_controller_base (
@@ -343,7 +343,7 @@ module final_top (
         .sram_be_n(base_ram_be_n)
     );
 
-    sram_controller #(
+    sram_controller_final #(
         .SRAM_ADDR_WIDTH(20),
         .SRAM_DATA_WIDTH(32)
     ) sram_controller_ext (
@@ -370,7 +370,7 @@ module final_top (
     );
 
     // UART controller module
-    uart_controller #(
+    uart_controller_final #(
         .CLK_FREQ(10_000_000),
         .BAUD(115200)
     ) uart_controller (

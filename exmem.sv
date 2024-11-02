@@ -29,7 +29,7 @@ module EXMEMREG #(
     // Save for MEM stage
     input wire MemWrite,
     input wire MemRead, 
-    input wire Branch,
+    input wire [2:0] Branch,
     input wire MemSize,
 
     output reg MemWrite_out,   // 1: Enable writing to memory
@@ -38,7 +38,7 @@ module EXMEMREG #(
                                // 0: Disable reading from memory
     output reg MemSize_out,    // 1: 32-bit memory access
                                // 0: 8-bit memory access
-    output reg Branch_out,     // 1: Enable branch operation
+    output reg [2:0] Branch_out,     // 1: Enable branch operation
                                // 0: Disable branch operation
 
     // Save for EXMEM stage
@@ -74,7 +74,7 @@ module EXMEMREG #(
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
             MemSize_out    <= 1'b1;
-            Branch_out     <= 1'b0;
+            Branch_out     <= 3'b000;
             PC_out         <= PC_ADDR;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
             ALU_result_out <= {DATA_WIDTH{1'b0}};
@@ -90,7 +90,7 @@ module EXMEMREG #(
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
             MemSize_out    <= 1'b1;
-            Branch_out     <= 1'b0;
+            Branch_out     <= 3'b000;
             PC_out         <= PC_in;
             Next_PC_out    <= {ADDR_WIDTH{1'b0}};
             ALU_result_out <= {DATA_WIDTH{1'b0}};

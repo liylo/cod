@@ -1,6 +1,6 @@
 `default_nettype none
 //TODO need multiple and divide alu operations
-module ALU (
+module ALU_final (
     input  wire [3:0]  alu_op,  
     input  wire [31:0] A,       
     input  wire [31:0] B,       
