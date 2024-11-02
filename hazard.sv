@@ -15,7 +15,7 @@ module Hazard_Detection #(
 
     output wire stall_and_flush
 );
-    always_comb begin : 
+    always_comb begin: 
         stall_and_flush = IDEXMemRead && (
             (IDEX_rd_addr != 0) && (
                 (IDEX_rd_addr == IFID_rs1_addr) ||
