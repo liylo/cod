@@ -42,7 +42,11 @@ module SFCONTROL #(
         PC_stall_and_flush = 2'b00;
 
         // Determine flush signals
-
+        // if (branch) begin
+        //     PC_stall_and_flush[1] = 1'b1; // Flush
+        //     IFID_stall_and_flush[1] = 1'b1; // Flush
+        //     IDEX_stall_and_flush[1] = 1'b1; // Flush
+        // end
 
         // Determine stall signals
         if (hazard) begin
@@ -56,13 +60,20 @@ module SFCONTROL #(
             EXMEM_stall_and_flush[0] = 1'b1; // Stall
             MEMWB_stall_and_flush[0] = 1'b1; // Stall
         end else if (im) begin
-            PC_stall_and_flush[0] = 1'b1; // Stall
-            IFID_stall_and_flush[0] = 1'b1; // Stall
-            IDEX_stall_and_flush[0] = 1'b1; // Stall
-            EXMEM_stall_and_flush[0] = 1'b1; // Stall
-            MEMWB_stall_and_flush[0] = 1'b1; // Stall
-        end
-        else if (branch) begin
+            if (prev_mem && !mem) begin // Using prev_mem to detect falling edge
+                PC_stall_and_flush[0] = 1'b1; // Stall
+                IFID_stall_and_flush[0] = 1'b1; // Stall
+                IDEX_stall_and_flush[0] = 1'b1; // Stall
+                EXMEM_stall_and_flush[0] = 1'b1; // Stall
+                MEMWB_stall_and_flush[0] = 1'b1; // Stall
+            end else begin
+                PC_stall_and_flush[0] = 1'b1; // Stall
+                IFID_stall_and_flush[0] = 1'b1; // Stall
+                IDEX_stall_and_flush[0] = 1'b1; // Stall
+                EXMEM_stall_and_flush[0] = 1'b1; // Stall
+                MEMWB_stall_and_flush[0] = 1'b1; // Stall
+            end
+        end else if(branch) begin
             PC_stall_and_flush[1] = 1'b1; // Flush
             IFID_stall_and_flush[1] = 1'b1; // Flush
             IDEX_stall_and_flush[1] = 1'b1; // Flush
