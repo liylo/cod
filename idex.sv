@@ -19,10 +19,10 @@ module IDEXREG #(
     input wire [1:0] flush_and_stall,
 
     // Save for WB stage
-    input wire MemtoReg,
+    input wire [1:0] MemtoReg,
     input wire RegWrite,
 
-    output reg MemtoReg_out,   // 1: Write data from memory to register
+    output reg [1:0] MemtoReg_out,   // 1: Write data from memory to register
                                // 0: Write data from ALU to register
     output reg RegWrite_out,   // 1: Enable writing to the register file
                                // 0: Disable writing to the register file
@@ -83,7 +83,7 @@ module IDEXREG #(
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             // Reset all outputs to default values
-            MemtoReg_out   <= 1'b0;
+            MemtoReg_out   <= 2'b00;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
@@ -101,7 +101,7 @@ module IDEXREG #(
             imm_out        <= {DATA_WIDTH{1'b0}};
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
-            MemtoReg_out   <= 1'b0;
+            MemtoReg_out   <= 2'b00;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
