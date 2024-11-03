@@ -168,8 +168,6 @@ module cpu_master #(
     .ADDR_WIDTH(32),           // Address width as specified
     .DATA_WIDTH(32)            // Data width as specified
 ) decoder_instance (
-    .clk(clk),
-    .reset(reset),
     .instruction(IFID_instr),
     .rd(ID_rd),
     .rs1(ID_rs1),

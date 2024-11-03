@@ -6,8 +6,8 @@ module DECODER #(
     parameter DATA_WIDTH = 32
 )
 (
-    input wire clk,
-    input wire reset,
+    //input wire clk,
+    //input wire reset,
 
     // From IFID stage
     input wire [31:0] instruction,
@@ -57,96 +57,95 @@ module DECODER #(
     localparam OPCODE_LUI        = 7'b0110111;
     localparam OPCODE_AUIPC      = 7'b0010111;
 
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            rd_reg <= 5'b0;
-            rs1_reg <= 5'b0;
-            rs2_reg <= 5'b0;
-            imm_reg <= {DATA_WIDTH{1'b0}};
-            imm_type_reg <= 1'b0;
-        end else begin
-            case (opcode)
-                OPCODE_R_TYPE: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= instruction[24:20];
-                    imm_reg <= {DATA_WIDTH{1'b0}};
-                    imm_type_reg <= 1'b0;
-                end
+    always @(*) begin 
+        
+        // Default values
+        rd_reg <= 5'b0;
+        rs1_reg <= 5'b0;
+        rs2_reg <= 5'b0;
+        imm_reg <= {DATA_WIDTH{1'b0}};
+        imm_type_reg <= 1'b0;
 
-                OPCODE_I_TYPE: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
-                    imm_type_reg <= 1'b1;
-                end
+        case (opcode)
+            OPCODE_R_TYPE: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= instruction[24:20];
+                imm_reg <= {DATA_WIDTH{1'b0}};
+                imm_type_reg <= 1'b0;
+            end
 
-                OPCODE_LOAD: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_I_TYPE: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= 5'b0;
+                imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_STORE: begin
-                    rd_reg <= 5'b0;
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= instruction[24:20];
-                    imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:25], instruction[11:7]};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_LOAD: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= 5'b0;
+                imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_BRANCH: begin
-                    rd_reg <= 5'b0;
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= instruction[24:20];
-                    imm_reg <= {{(DATA_WIDTH-13){instruction[31]}}, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_STORE: begin
+                rd_reg <= 5'b0;
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= instruction[24:20];
+                imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:25], instruction[11:7]};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_JALR: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= instruction[19:15];
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_BRANCH: begin
+                rd_reg <= 5'b0;
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= instruction[24:20];
+                imm_reg <= {{(DATA_WIDTH-13){instruction[31]}}, instruction[31], instruction[7], instruction[30:25], instruction[11:8], 1'b0};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_JAL: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= 5'b0;
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {{(DATA_WIDTH-21){instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_JALR: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= instruction[19:15];
+                rs2_reg <= 5'b0;
+                imm_reg <= {{(DATA_WIDTH-12){instruction[31]}}, instruction[31:20]};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_LUI: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= 5'b0;
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {instruction[31:12], 12'b0};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_JAL: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= 5'b0;
+                rs2_reg <= 5'b0;
+                imm_reg <= {{(DATA_WIDTH-21){instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0};
+                imm_type_reg <= 1'b1;
+            end
 
-                OPCODE_AUIPC: begin
-                    rd_reg <= instruction[11:7];
-                    rs1_reg <= 5'b0;
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {instruction[31:12], 12'b0};
-                    imm_type_reg <= 1'b1;
-                end
+            OPCODE_LUI: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= 5'b0;
+                rs2_reg <= 5'b0;
+                imm_reg <= {instruction[31:12], 12'b0};
+                imm_type_reg <= 1'b1;
+            end
 
-                default: begin
-                    rd_reg <= 5'b0;
-                    rs1_reg <= 5'b0;
-                    rs2_reg <= 5'b0;
-                    imm_reg <= {DATA_WIDTH{1'b0}};
-                    imm_type_reg <= 1'b0;
-                end
-            endcase
-        end
+            OPCODE_AUIPC: begin
+                rd_reg <= instruction[11:7];
+                rs1_reg <= 5'b0;
+                rs2_reg <= 5'b0;
+                imm_reg <= {instruction[31:12], 12'b0};
+                imm_type_reg <= 1'b1;
+            end
+
+            default: begin
+                rd_reg <= 5'b0;
+                rs1_reg <= 5'b0;
+                rs2_reg <= 5'b0;
+                imm_reg <= {DATA_WIDTH{1'b0}};
+                imm_type_reg <= 1'b0;
+            end
+        endcase
     end
-
 endmodule
