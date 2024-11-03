@@ -1,5 +1,5 @@
 `default_nettype none
-//TODO 内部逻辑还不完善，根据指令设计
+//TODO reg_a_in should consider forward
 module SUM #(
     parameter PC_ADDR = 32'h8000_0000,
     parameter ADDR_WIDTH = 32,

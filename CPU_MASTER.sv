@@ -343,7 +343,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .MEMWB_rd_addr(MEMWB_rd_addr),
 
         .MEMWBRegWrite(MEMWB_RegWrite),
-        .EXMEMRegWrite(IDEX_RegWrite)
+        .EXMEMRegWrite(EXMEM_RegWrite)
     ) ;
 
 
