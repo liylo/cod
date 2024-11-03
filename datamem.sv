@@ -1,15 +1,18 @@
+`default_nettype none
+
 module MEMORY #(
     parameter DATA_WIDTH = 32,
     parameter ADDR_WIDTH = 32,
     parameter SRAM_ADDR_WIDTH = 20,
     parameter SRAM_DATA_WIDTH = 32,
 
+    // Calculate the number of bytes and byte width
     localparam SRAM_BYTES = SRAM_DATA_WIDTH / 8,
     localparam SRAM_BYTE_WIDTH = $clog2(SRAM_BYTES)
 ) (
     // Clock and reset
-    input wire clk_i, 
-    input wire rst_i, 
+    input wire clk_i,
+    input wire rst_i,
 
     // Stall signal
     output wire stall_and_flush_out,
@@ -32,7 +35,6 @@ module MEMORY #(
     input wire [DATA_WIDTH-1:0] Mem_data_in,
     output wire [DATA_WIDTH-1:0] Mem_data_out
 );
-
     // State machine states
     localparam IDLE  = 2'b00;
     localparam READ  = 2'b01;
@@ -44,6 +46,9 @@ module MEMORY #(
     reg [ADDR_WIDTH-1:0] addr_reg;
     reg size_reg;
     reg [DATA_WIDTH-1:0] read_data_reg;
+
+    // Combinational logic for immediate data output
+    reg [DATA_WIDTH-1:0] read_data_comb;
 
     // State transition logic
     always @(posedge clk_i or posedge rst_i) begin
@@ -148,22 +153,13 @@ module MEMORY #(
                     wb_stb_o <= 1'b1;
                     wb_we_o  <= 1'b0;
                     wb_adr_o <= addr_reg;
-                    wb_sel_o <= wb_sel_o; // Keep the previous sel_o
+                    // Keep the previous wb_sel_o
 
                     if (wb_ack_i) begin
                         wb_cyc_o <= 1'b0;
                         wb_stb_o <= 1'b0;
-                        // Handle read data
-                        if (size_reg == 1'b0) begin // Byte access
-                            case (addr_reg[1:0])
-                                2'b00: read_data_reg <= {{24{wb_dat_i[7]}}, wb_dat_i[7:0]};
-                                2'b01: read_data_reg <= {{24{wb_dat_i[15]}}, wb_dat_i[15:8]};
-                                2'b10: read_data_reg <= {{24{wb_dat_i[23]}}, wb_dat_i[23:16]};
-                                2'b11: read_data_reg <= {{24{wb_dat_i[31]}}, wb_dat_i[31:24]};
-                            endcase
-                        end else begin // Word access
-                            read_data_reg <= wb_dat_i;
-                        end
+                        // Update read_data_reg in the next clock cycle
+                        read_data_reg <= read_data_comb;
                     end
                 end
                 WRITE: begin
@@ -171,8 +167,7 @@ module MEMORY #(
                     wb_stb_o <= 1'b1;
                     wb_we_o  <= 1'b1;
                     wb_adr_o <= addr_reg;
-                    wb_sel_o <= wb_sel_o; // Keep the previous sel_o
-                    wb_dat_o <= wb_dat_o; // Keep the data set in IDLE state
+                    // Keep the previous wb_sel_o and wb_dat_o
 
                     if (wb_ack_i) begin
                         wb_cyc_o <= 1'b0;
@@ -188,10 +183,28 @@ module MEMORY #(
         end
     end
 
-    // Output data to CPU
-    assign Mem_data_out = read_data_reg;
+    // Combinational logic for immediate data output
+    always @(*) begin
+        if (state == READ && wb_ack_i) begin
+            if (size_reg == 1'b0) begin // Byte access
+                case (addr_reg[1:0])
+                    2'b00: read_data_comb = {{24{wb_dat_i[7]}}, wb_dat_i[7:0]};
+                    2'b01: read_data_comb = {{24{wb_dat_i[15]}}, wb_dat_i[15:8]};
+                    2'b10: read_data_comb = {{24{wb_dat_i[23]}}, wb_dat_i[23:16]};
+                    2'b11: read_data_comb = {{24{wb_dat_i[31]}}, wb_dat_i[31:24]};
+                endcase
+            end else begin // Word access
+                read_data_comb = wb_dat_i;
+            end
+        end else begin
+            read_data_comb = read_data_reg; // Default to the last read data
+        end
+    end
+
+    // Output data to CPU (immediate output)
+    assign Mem_data_out = read_data_comb;
 
     // Stall signal (stall when memory access is in progress)
-    assign stall_and_flush_out = (state != IDLE);
+    assign stall_and_flush_out = (next_state != IDLE);
 
 endmodule

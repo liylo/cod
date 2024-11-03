@@ -59,13 +59,17 @@ module SFCONTROL #(
             IDEX_stall_and_flush[0] = 1'b1; // Stall
             EXMEM_stall_and_flush[0] = 1'b1; // Stall
             MEMWB_stall_and_flush[1] = 1'b1; // flush
-        end else if (im) begin
-            PC_stall_and_flush[0] = 1'b1; // Stall
-            IFID_stall_and_flush[1] = 1'b1; // flush
         end else if(branch) begin
             PC_stall_and_flush[1] = 1'b1; // Flush
             IFID_stall_and_flush[1] = 1'b1; // Flush
             IDEX_stall_and_flush[1] = 1'b1; // Flush
+            EXMEM_stall_and_flush[1] = 1'b1; // Flush
+            MEMWB_stall_and_flush[1] = 1'b1; // Flush
         end
+        else if (im) begin
+            PC_stall_and_flush[0] = 1'b1; // Stall
+            IFID_stall_and_flush[1] = 1'b1; // flush
+        end 
     end
+    
 endmodule
