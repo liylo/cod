@@ -1,4 +1,4 @@
-module uart_controller #(
+module uart_controller_final #(
     parameter ADDR_WIDTH = 32,
     parameter DATA_WIDTH = 32,
 

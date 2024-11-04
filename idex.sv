@@ -19,10 +19,10 @@ module IDEXREG #(
     input wire [1:0] flush_and_stall,
 
     // Save for WB stage
-    input wire MemtoReg,
+    input wire [1:0] MemtoReg,
     input wire RegWrite,
 
-    output reg MemtoReg_out,   // 1: Write data from memory to register
+    output reg [1:0] MemtoReg_out,   // 1: Write data from memory to register
                                // 0: Write data from ALU to register
     output reg RegWrite_out,   // 1: Enable writing to the register file
                                // 0: Disable writing to the register file
@@ -30,7 +30,7 @@ module IDEXREG #(
     // Save for MEM stage
     input wire MemWrite,
     input wire MemRead,
-    input wire Branch,
+    input wire [2:0] Branch,
     input wire MemSize,
 
     output reg MemWrite_out,   // 1: Enable writing to memory
@@ -39,15 +39,15 @@ module IDEXREG #(
                                // 0: Disable reading from memory
     output reg MemSize_out,    // 1: 32-bit memory access
                                // 0: 8-bit memory access
-    output reg Branch_out,     // 1: Enable branch operation
+    output reg [2:0] Branch_out,     // 1: Enable branch operation
                                // 0: Disable branch operation
 
     // Save for EX stage
     input wire [3:0] ALUOp,
-    input wire ALUSrc,
+    input wire [1:0] ALUSrc,
 
     output reg [3:0] ALUOp_out, // Specifies the ALU operation to perform based on alu_ops_t
-    output reg ALUSrc_out,      // 1: ALU second operand is an immediate value
+    output reg [1:0] ALUSrc_out,      // 1: ALU second operand is an immediate value
                                // 0: ALU second operand is from a register
 
     // Save for ID/EX stage
@@ -58,8 +58,6 @@ module IDEXREG #(
     input wire [4:0] rs1_addr,  // Source register 1 index
     input wire [4:0] rs2_addr,  // Source register 2 index
     input wire [4:0] rd_addr,   // Destination register index
-    input wire [4:0] waddr,
-    output reg [4:0] waddr_out,
 
     input wire imm_type,
     input wire [DATA_WIDTH-1:0] imm,
@@ -85,14 +83,14 @@ module IDEXREG #(
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             // Reset all outputs to default values
-            MemtoReg_out   <= 1'b0;
+            MemtoReg_out   <= 2'b00;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
             MemSize_out    <= 1'b1;
-            Branch_out     <= 1'b0;
+            Branch_out     <= 3'b000;
             ALUOp_out      <= 4'b0000;
-            ALUSrc_out     <= 1'b0;
+            ALUSrc_out     <= 1'b00;
             PC_out         <= PC_ADDR;
             rs1_data_out   <= {DATA_WIDTH{1'b0}};
             rs2_data_out   <= {DATA_WIDTH{1'b0}};
@@ -101,17 +99,16 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
-            waddr_out      <= 5'b00000;
         end else if (flush) begin
             // Flush the pipeline by setting control signals to safe defaults and data signals to zero
-            MemtoReg_out   <= 1'b0;
+            MemtoReg_out   <= 2'b00;
             RegWrite_out   <= 1'b0;
             MemWrite_out   <= 1'b0;
             MemRead_out    <= 1'b0;
             MemSize_out    <= 1'b1;
-            Branch_out     <= 1'b0;
+            Branch_out     <= 3'b000;
             ALUOp_out      <= 4'b0000;
-            ALUSrc_out     <= 1'b0;
+            ALUSrc_out     <= 1'b00;
             PC_out         <= PC_in;
             rs1_data_out   <= {DATA_WIDTH{1'b0}};
             rs2_data_out   <= {DATA_WIDTH{1'b0}};
@@ -120,7 +117,6 @@ module IDEXREG #(
             rd_addr_out    <= 5'b00000;
             imm_type_out   <= 1'b0;
             imm_out        <= {DATA_WIDTH{1'b0}};
-            waddr_out      <= 5'b00000;
         end else if (!stall) begin
             // Update all outputs with input values
             MemtoReg_out   <= MemtoReg;
@@ -139,7 +135,6 @@ module IDEXREG #(
             rd_addr_out    <= rd_addr;
             imm_type_out   <= imm_type;
             imm_out        <= imm;
-            waddr_out      <= waddr;
         end
         // If stall is asserted, hold the current values (do nothing)
     end

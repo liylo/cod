@@ -20,21 +20,19 @@ module MEMWBREG #(
     input wire [1:0] flush_and_stall, // flush_and_stall[1]: flush, flush_and_stall[0]: stall
     
     // Inputs from EX/MEM pipeline register
-    input wire MemtoReg,
+    input wire [1:0] MemtoReg,
     input wire RegWrite,
     input wire [ADDR_WIDTH-1:0] PC_in,
     input wire [DATA_WIDTH-1:0] ALU_result_in,
     input wire [DATA_WIDTH-1:0] memory_data_in,
     input wire [4:0] rd_addr_in,
-    input wire [4:0] waddr_in,
     
     // Outputs to WB stage
     output reg [ADDR_WIDTH-1:0] PC_out,
     output reg [DATA_WIDTH-1:0] ALU_result_out,
     output reg [DATA_WIDTH-1:0] memory_data_out,
     output reg [4:0] rd_addr_out,
-    output reg [4:0] waddr_out,
-    output reg MemtoReg_out,
+    output reg [1:0] MemtoReg_out,
     output reg RegWrite_out
 );
 
@@ -45,8 +43,7 @@ module MEMWBREG #(
             ALU_result_out   <= {DATA_WIDTH{1'b0}};
             memory_data_out  <= {DATA_WIDTH{1'b0}};
             rd_addr_out      <= 5'b0;
-            waddr_out        <= 5'b0;
-            MemtoReg_out     <= 1'b0;
+            MemtoReg_out     <= 2'b00;
             RegWrite_out     <= 1'b0;
         end else if (flush_and_stall[1]) begin
             // Flush: set outputs to NOP/bubble values
@@ -54,8 +51,7 @@ module MEMWBREG #(
             ALU_result_out   <= {DATA_WIDTH{1'b0}};
             memory_data_out  <= {DATA_WIDTH{1'b0}};
             rd_addr_out      <= 5'b0;
-            waddr_out        <= 5'b0;
-            MemtoReg_out     <= 1'b0;
+            MemtoReg_out     <= 2'b00;
             RegWrite_out     <= 1'b0;
         end else if (flush_and_stall[0]) begin
             // Stall: outputs retain their previous values (do nothing)
@@ -66,7 +62,6 @@ module MEMWBREG #(
             ALU_result_out   <= ALU_result_in;
             memory_data_out  <= memory_data_in;
             rd_addr_out      <= rd_addr_in;
-            waddr_out        <= waddr_in;
             MemtoReg_out     <= MemtoReg;
             RegWrite_out     <= RegWrite;
         end

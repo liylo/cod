@@ -11,10 +11,8 @@ module Forward #(
     input  wire [4:0] IDEX_rs1_addr, 
     input  wire [4:0] IDEX_rs2_addr, 
 
-    input  wire [DATA_WIDTH-1:0] EXMEM_rd_data, 
     input  wire [4:0] EXMEM_rd_addr,            
 
-    input  wire [DATA_WIDTH-1:0] MEMWB_rd_data, 
     input  wire [4:0] MEMWB_rd_addr,           
 
     // Control signals

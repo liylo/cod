@@ -19,7 +19,11 @@ module IM #(
     input  wire [ADDR_WIDTH-1:0] PC_addr,
     output reg  [DATA_WIDTH-1:0] instruction,
 
-    output wire [1:0] stall_and_flush,
+    output wire stall_and_flush,
+
+    // Added flush signal input
+    input  wire flush,
+    input  wire stall,
 
     // Wishbone master interface
     output reg wb_cyc_o,
@@ -31,7 +35,6 @@ module IM #(
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
     output reg wb_we_o
 );
-    reg [1:0] stall_and_flush_reg;
     // State machine states
     typedef enum logic [1:0] {
         IDLE = 2'b00,
@@ -40,6 +43,7 @@ module IM #(
 
     state_t state;
 
+    // Sequential logic for state transition and outputs
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             state <= IDLE;
@@ -53,28 +57,45 @@ module IM #(
         end else begin
             case (state)
                 IDLE: begin
-                    wb_cyc_o <= 1'b1;
-                    wb_stb_o <= 1'b1;
-                    wb_we_o  <= 1'b0;
-                    wb_sel_o <= {(DATA_WIDTH/8){1'b1}};
-                    wb_adr_o <= PC_addr;
-                    state <= READ;
-                    stall_and_flush_reg <= 2'b10;
+                    if (!flush&&!stall) begin
+                        wb_cyc_o <= 1'b1;
+                        wb_stb_o <= 1'b1;
+                        wb_we_o  <= 1'b0;
+                        wb_sel_o <= {(DATA_WIDTH/8){1'b1}};
+                        wb_adr_o <= PC_addr;
+                        state <= READ;
+                    end else begin
+                        // If flush, remain in IDLE and reset outputs
+                        wb_cyc_o <= 1'b0;
+                        wb_stb_o <= 1'b0;
+                        if (flush) begin
+                            instruction <= {DATA_WIDTH{1'b0}};
+                        end
+                    end
                 end
                 READ: begin
-                    if (wb_ack_i) begin
+                    if (flush) begin
+                        // If flush occurs during READ, cancel transaction
+                        wb_cyc_o <= 1'b0;
+                        wb_stb_o <= 1'b0;
+                        instruction <= {DATA_WIDTH{1'b0}};
+                        state <= IDLE;
+                    end else if (wb_ack_i) begin
                         instruction <= wb_dat_i;
                         wb_cyc_o <= 1'b0;
                         wb_stb_o <= 1'b0;
                         state <= IDLE;
-                        stall_and_flush_reg <= 2'b00;
                     end
+                end
+                default: begin
+                    // Should not reach here
+                    state <= IDLE;
                 end
             endcase
         end
     end
 
-    assign stall_and_flush = stall_and_flush_reg;
+    assign stall_and_flush = (state != IDLE);
 
 
 endmodule

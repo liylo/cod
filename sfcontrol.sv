@@ -23,10 +23,6 @@ module SFCONTROL #(
 );
 
     reg prev_mem;
-    wire mem_falling_edge;
-
-    // Detect falling edge of 'mem' signal
-    assign mem_falling_edge = prev_mem && (!mem);
 
     // Sequential logic to update 'prev_mem'
     always @(posedge clk or posedge reset) begin
@@ -45,40 +41,35 @@ module SFCONTROL #(
         MEMWB_stall_and_flush = 2'b00;
         PC_stall_and_flush = 2'b00;
 
-        // Flush signals for branch instructions
-        if (branch) begin
+        // Determine flush signals
+        // if (branch) begin
+        //     PC_stall_and_flush[1] = 1'b1; // Flush
+        //     IFID_stall_and_flush[1] = 1'b1; // Flush
+        //     IDEX_stall_and_flush[1] = 1'b1; // Flush
+        // end
+
+        // Determine stall signals
+        if (hazard) begin
+            PC_stall_and_flush[0] = 1'b1; // Stall
+            IFID_stall_and_flush[0] = 1'b1; // Stall
+            IDEX_stall_and_flush[0] = 1'b1; // Stall
+        end else if (mem) begin
+            PC_stall_and_flush[0] = 1'b1; // Stall
+            IFID_stall_and_flush[0] = 1'b1; // Stall
+            IDEX_stall_and_flush[0] = 1'b1; // Stall
+            EXMEM_stall_and_flush[0] = 1'b1; // Stall
+            MEMWB_stall_and_flush[1] = 1'b1; // flush
+        end else if(branch) begin
+            PC_stall_and_flush[1] = 1'b1; // Flush
             IFID_stall_and_flush[1] = 1'b1; // Flush
             IDEX_stall_and_flush[1] = 1'b1; // Flush
+            EXMEM_stall_and_flush[1] = 1'b1; // Flush
+            MEMWB_stall_and_flush[1] = 1'b1; // Flush
         end
-
-        // Handle 'im' signal with previous 'mem' status
-        if (im) begin
-            if (mem_falling_edge) begin
-                // Stall IFID, IDEX, EXMEM stages
-                IFID_stall_and_flush[0] = 1'b1; // Stall
-                IDEX_stall_and_flush[0] = 1'b1; // Stall
-                EXMEM_stall_and_flush[0] = 1'b1; // Stall
-            end else begin
-                // Stall IFID stage only
-                IFID_stall_and_flush[0] = 1'b1; // Stall
-            end
-        end
-
-        // Stall signals when 'mem' is asserted
-        if (mem) begin
-            // Stall IFID, IDEX, EXMEM stages
-            IFID_stall_and_flush[0] = 1'b1; // Stall
-            IDEX_stall_and_flush[0] = 1'b1; // Stall
-            EXMEM_stall_and_flush[0] = 1'b1; // Stall
-        end
-
-        // Stall signals for hazard detection
-        if (hazard) begin
-            // Stall IFID, IDEX, EXMEM, MEMWB stages
-            IFID_stall_and_flush[0] = 1'b1; // Stall
-            IDEX_stall_and_flush[0] = 1'b1; // Stall
-            EXMEM_stall_and_flush[0] = 1'b1; // Stall
-            MEMWB_stall_and_flush[0] = 1'b1; // Stall
-        end
+        else if (im) begin
+            PC_stall_and_flush[0] = 1'b1; // Stall
+            IFID_stall_and_flush[1] = 1'b1; // flush
+        end 
     end
+    
 endmodule

@@ -13,14 +13,14 @@ module Hazard_Detection #(
 
     input wire [4:0] IDEX_rd,
     input reg IDEX_MemRead,
-    output reg [1:0] stall_and_flush
+    output reg  stall_and_flush
 );
 // check conditions
   always_comb begin
     if (IDEX_MemRead && (IFID_rs1_addr == IDEX_rd || IFID_rs2_addr == IDEX_rd)) begin
-      stall_and_flush = 2'b10; // stall
+      stall_and_flush = 1'b1; // stall
     end else begin
-      stall_and_flush = 2'b00; // no stall or flush
+      stall_and_flush = 1'b0; // no stall or flush
     end
   end
 

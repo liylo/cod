@@ -28,8 +28,8 @@ module PC_REG #(
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             pc_reg <= PC_ADDR;         // Reset PC to initial address
-        end else if (flush) begin
-            pc_reg <= PC_ADDR;         // On flush, reset PC to initial address
+        // end else if (flush) begin
+        //     pc_reg <= PC_ADDR;         // On flush, reset PC to initial address
         end else if (!stall) begin
             pc_reg <= PC_new_reg_in;   // Update PC with new value
         end

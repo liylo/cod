@@ -29,7 +29,7 @@ THE SOFTWARE.
 /*
  * Wishbone 3 port multiplexer
  */
-module wb_mux_3 #
+module wb_mux_3_final #
 (
     parameter DATA_WIDTH = 32,                    // width of data bus in bits (8, 16, 32, or 64)
     parameter ADDR_WIDTH = 32,                    // width of address bus in bits

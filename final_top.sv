@@ -80,24 +80,23 @@ module final_top (
 );
 
  
-    // PLL 鍒嗛绀轰緥
-    logic locked, clk_10M, clk_20M;
+  // PLL 分频示例
+  logic locked, clk_10M, clk_20M;
+  pll_example clock_gen (
+      // Clock in ports
+      .clk_in1(clk_50M),  // 外部时钟输入
+      // Clock out ports
+      .clk_out1(clk_10M),  // 时钟输出 1，频率在 IP 配置界面中设置
+      .clk_out2(clk_20M),  // 时钟输出 2，频率在 IP 配置界面中设置
+      // Status and control signals
+      .reset(reset_btn),  // PLL 复位输入
+      .locked(locked)  // PLL 锁定指示输出，"1"表示时钟稳定，
+                       // 后级电路复位信号应当由它生成（见下）
+  );
 
-    //瀹炵幇鍒嗛锛屼笉浣跨敤妯″潡
-    logic [3:0] cnt;
-    always_ff @(posedge clk_50M or negedge reset_btn) begin
-        if (~reset_btn) cnt <= 4'b0;
-        else if (cnt == 4'b1000) cnt <= 4'b0;
-        else cnt <= cnt + 1;
-    end
-
-    assign clk_10M = cnt[3];
-    assign clk_20M = cnt[2];
-    
-
-    // Synchronous reset generation
-    logic reset_of_clk10M;
-    always_ff @(posedge clk_10M or negedge locked)  begin
+  logic reset_of_clk10M;
+  // 异步复位，同步释放，将 locked 信号转为后级电路的复位 reset_of_clk10M
+  always_ff @(posedge clk_10M or negedge locked) begin
     if (~locked) reset_of_clk10M <= 1'b1;
     else reset_of_clk10M <= 1'b0;
   end
@@ -109,7 +108,7 @@ module final_top (
     assign sys_clk = clk_10M;
     assign sys_rst = reset_of_clk10M;
 
-    // 鏈疄楠屼笉浣跨敤 CPLD 涓插彛锛岀鐢ㄩ槻姝㈡�荤嚎鍐茬獊
+    // 鏈疄楠屼笉浣跨敤 CPLD 涓插彛锛岀鐢ㄩ槻姝拷?锟界嚎鍐茬獊
     assign uart_rdn = 1'b1;
     assign uart_wrn = 1'b1;
 
@@ -174,7 +173,7 @@ module final_top (
     wire        wbm_stb_o;
     wire        wbm_ack_i;
 
-    arbiter #(
+    wb_arbiter_2 #(
         .DATA_WIDTH(32),
         .ADDR_WIDTH(32),
         .SELECT_WIDTH(4),
@@ -249,7 +248,7 @@ module final_top (
     wire [3:0]  wbs2_sel_o;
     wire wbs2_we_o;
 
-    wb_mux_3 wb_mux (
+    wb_mux_3_final wb_mux (
         .clk(sys_clk),
         .rst(sys_rst),
 
@@ -317,7 +316,7 @@ module final_top (
     /* =========== Lab5 MUX end =========== */
 
     /* =========== Lab5 Slaves begin =========== */
-    sram_controller #(
+    sram_controller_final #(
         .SRAM_ADDR_WIDTH(20),
         .SRAM_DATA_WIDTH(32)
     ) sram_controller_base (
@@ -343,7 +342,7 @@ module final_top (
         .sram_be_n(base_ram_be_n)
     );
 
-    sram_controller #(
+    sram_controller_final #(
         .SRAM_ADDR_WIDTH(20),
         .SRAM_DATA_WIDTH(32)
     ) sram_controller_ext (
@@ -370,7 +369,7 @@ module final_top (
     );
 
     // UART controller module
-    uart_controller #(
+    uart_controller_final #(
         .CLK_FREQ(10_000_000),
         .BAUD(115200)
     ) uart_controller (

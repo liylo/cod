@@ -1,124 +1,153 @@
-module sram_controller #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 32,
-
+module sram_controller_final #(
+    parameter DATA_WIDTH      = 32,
+    parameter ADDR_WIDTH      = 32,
     parameter SRAM_ADDR_WIDTH = 20,
     parameter SRAM_DATA_WIDTH = 32,
 
-    localparam SRAM_BYTES = SRAM_DATA_WIDTH / 8,
+    localparam SRAM_BYTES      = SRAM_DATA_WIDTH / 8,
     localparam SRAM_BYTE_WIDTH = $clog2(SRAM_BYTES)
-) (
-    // clk and reset
+)(
     input wire clk_i,
     input wire rst_i,
 
-    // wishbone slave interface
-    input wire wb_cyc_i,
-    input wire wb_stb_i,
-    output reg wb_ack_o,
+    input wire                 wb_cyc_i,
+    input wire                 wb_stb_i,
+    output reg                 wb_ack_o,
     input wire [ADDR_WIDTH-1:0] wb_adr_i,
     input wire [DATA_WIDTH-1:0] wb_dat_i,
     output reg [DATA_WIDTH-1:0] wb_dat_o,
     input wire [DATA_WIDTH/8-1:0] wb_sel_i,
-    input wire wb_we_i,
+    input wire                 wb_we_i,
 
-    // sram interface
     output reg [SRAM_ADDR_WIDTH-1:0] sram_addr,
     inout wire [SRAM_DATA_WIDTH-1:0] sram_data,
-    output reg sram_ce_n,  // 低电平有效
-    output reg sram_oe_n,  // 使能输出，读为 0，写为 1
-    output reg sram_we_n,  // 使能写，写为 0，读为 1
-    output reg [SRAM_BYTES-1:0] sram_be_n
+    output reg                        sram_ce_n,
+    output reg                        sram_oe_n,
+    output reg                        sram_we_n,
+    output reg [SRAM_BYTES-1:0]       sram_be_n
 );
 
-  // DID: 实现 SRAM 控制器
-  // 状态机状态定义
-  typedef enum logic [2:0] {
-    STATE_IDLE = 0,
-    STATE_READ = 1,
-    STATE_READ_2 = 2,
-    STATE_WRITE = 3,
+typedef enum logic [2:0] {
+    STATE_IDLE    = 0,
+    STATE_READ    = 1,
+    STATE_READ_2  = 2,
+    STATE_WRITE   = 3,
     STATE_WRITE_2 = 4,
     STATE_WRITE_3 = 5,
-    STATE_DONE = 6
-  } state_t;
+    STATE_DONE    = 6
+} state_t;
 
-  state_t state;  // 状态机状态
+state_t state;
 
-  // 定义内部信号
-  reg [SRAM_DATA_WIDTH-1:0] sram_data_o_reg;
-  wire [SRAM_DATA_WIDTH-1:0] sram_data_i_comb;
-  reg sram_data_t_reg;
+reg [SRAM_DATA_WIDTH-1:0] sram_data_o_reg;
+reg                       sram_data_t_reg;
+reg [SRAM_DATA_WIDTH-1:0] sram_data_i_reg;
 
-  assign sram_data = sram_data_t_reg ? {SRAM_DATA_WIDTH{1'bz}} : sram_data_o_reg;
-  assign sram_data_i_comb = sram_data;
+assign sram_data = (sram_data_t_reg) ? 32'bz : sram_data_o_reg;
 
+reg ram_ce_n_reg;
+reg ram_oe_n_reg;
+reg ram_we_n_reg;
 
-  always_ff @(posedge clk_i) begin  // 时序逻辑
+assign sram_ce_n = ram_ce_n_reg;
+assign sram_oe_n = ram_oe_n_reg;
+assign sram_we_n = ram_we_n_reg;
+
+always_ff @(posedge clk_i or posedge rst_i) begin
     if (rst_i) begin
-      wb_ack_o <= 0;
-      state <= STATE_IDLE;
-      sram_ce_n <= 1'b1;
-      sram_oe_n <= 1'b1;
-      sram_we_n <= 1'b1;
-      // high-Z when reset
-      sram_data_t_reg <= 1'b1;
-      sram_data_o_reg <= {SRAM_DATA_WIDTH{1'b0}};
+        ram_ce_n_reg    <= 1'b1;
+        ram_oe_n_reg    <= 1'b1;
+        ram_we_n_reg    <= 1'b1;
+        sram_be_n       <= 4'b0000;
+        sram_data_o_reg <= 0;
+        sram_data_t_reg <= 1'b1;
+        wb_ack_o        <= 1'b0;
+        state           <= STATE_IDLE;
     end else begin
-      case (state)
-        STATE_IDLE: begin
-          if (wb_stb_i && wb_cyc_i) begin
-            if (wb_we_i) begin  // 写操作
-              sram_data_t_reg <= 1'b0;
-              sram_data_o_reg <= wb_dat_i;
-              sram_ce_n <= 0;  // 内存结束休眠
-              sram_oe_n <= 1;  // 禁止输出
-              sram_we_n <= 1;  // 禁止写
-              sram_addr <= wb_adr_i[SRAM_ADDR_WIDTH+1:2];
-              sram_be_n <= ~wb_sel_i;
-              state <= STATE_WRITE;
-            end else begin
-              sram_data_t_reg <= 1'b1;
-              sram_ce_n <= 0;  // 内存结束休眠
-              sram_oe_n <= 0;  // 使能输出
-              sram_we_n <= 1;  // 禁止写
-              sram_addr <= wb_adr_i[SRAM_ADDR_WIDTH+1:2];
-              // sram_be_n 应该是 SEL_I 的反转
-              sram_be_n <= ~wb_sel_i;
-              state <= STATE_READ;
+        case (state)
+            STATE_IDLE: begin
+                if (wb_cyc_i && wb_stb_i) begin
+                    ram_ce_n_reg <= 1'b0;
+                    sram_addr    <= wb_adr_i[SRAM_ADDR_WIDTH+1:2];
+                    sram_be_n    <= ~wb_sel_i;
+
+                    if (wb_we_i) begin
+                        sram_data_t_reg <= 1'b0;
+                        state           <= STATE_WRITE;
+                    end else begin
+                        sram_data_t_reg <= 1'b1;
+                        ram_oe_n_reg    <= 1'b0;
+                        state           <= STATE_READ;
+                    end
+                end
             end
-          end
-        end
-        STATE_READ: begin 
-        end
-        STATE_READ_2: begin
-            wb_ack_o <= 1;  // 使能应答
-            sram_oe_n <= 1;  // 禁止输出
-            sram_ce_n <= 1;  // 使能内存
-            state <= STATE_DONE;
-        end
-        STATE_DONE: begin
-          wb_ack_o <= 0;  // 禁止应答
-          sram_data_t_reg <= 1'b1;
-          state <= STATE_IDLE;
-        end
-        STATE_WRITE: begin
-          sram_we_n <= 0;  // 使能写
-          state <= STATE_WRITE_2;
-        end
-        STATE_WRITE_2: begin
-          sram_we_n <= 1;  // 禁止写
-          state <= STATE_WRITE_3;
-        end
-        STATE_WRITE_3: begin
-          sram_ce_n <= 1;  // 使能内存
-          wb_ack_o <= 1;  // 使能应答
-          state <= STATE_DONE;
-        end
-        default: begin
-          state <= STATE_IDLE;
-        end
-      endcase
+
+            STATE_READ: begin
+                sram_data_i_reg <= sram_data;
+                state           <= STATE_READ_2;
+            end
+
+            STATE_READ_2: begin
+                if (~sram_be_n[0]) wb_dat_o[7:0]   <= sram_data_i_reg[7:0];
+                if (~sram_be_n[1]) wb_dat_o[15:8]  <= sram_data_i_reg[15:8];
+                if (~sram_be_n[2]) wb_dat_o[23:16] <= sram_data_i_reg[23:16];
+                if (~sram_be_n[3]) wb_dat_o[31:24] <= sram_data_i_reg[31:24];
+
+                ram_oe_n_reg <= 1'b1;
+                ram_ce_n_reg <= 1'b1;
+                wb_ack_o     <= 1'b1;
+                state        <= STATE_DONE;
+            end
+
+            STATE_WRITE: begin
+                ram_we_n_reg    <= 1'b0;
+                sram_data_i_reg <= sram_data;
+                state           <= STATE_WRITE_2;
+            end
+
+            STATE_WRITE_2: begin
+                // For each byte, decide whether to write new data (wb_dat_i) or keep original data (sram_data_i_reg)
+                if (~sram_be_n[0])
+                    sram_data_o_reg[7:0] <= wb_dat_i[7:0];  // Write new data
+                else
+                    sram_data_o_reg[7:0] <= sram_data_i_reg[7:0]; // Keep original data
+
+                if (~sram_be_n[1])
+                    sram_data_o_reg[15:8] <= wb_dat_i[15:8];
+                else
+                    sram_data_o_reg[15:8] <= sram_data_i_reg[15:8];
+
+                if (~sram_be_n[2])
+                    sram_data_o_reg[23:16] <= wb_dat_i[23:16];
+                else
+                    sram_data_o_reg[23:16] <= sram_data_i_reg[23:16];
+
+                if (~sram_be_n[3])
+                    sram_data_o_reg[31:24] <= wb_dat_i[31:24];
+                else
+                    sram_data_o_reg[31:24] <= sram_data_i_reg[31:24];
+
+                // Set tri-state buffer to write mode, prepare to drive data onto sram_data bus
+                sram_data_t_reg <= 1'b0;
+                state           <= STATE_WRITE_3;
+            end
+
+            STATE_WRITE_3: begin
+                ram_ce_n_reg    <= 1'b1;
+                sram_data_t_reg <= 1'b1;
+                wb_ack_o        <= 1'b1;
+                ram_we_n_reg    <= 1'b1;
+                state           <= STATE_DONE;
+            end
+
+            STATE_DONE: begin
+                wb_ack_o <= 1'b0;
+                state    <= STATE_IDLE;
+            end
+
+            default: state <= STATE_IDLE;
+        endcase
     end
-  end
+end
+
 endmodule

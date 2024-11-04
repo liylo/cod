@@ -20,7 +20,7 @@ module Controler(
 
     input wire [31:0] instruction,
 
-    output reg MemtoReg,   // 1: Write data from memory to register
+    output reg [1:0] MemtoReg ,   // 1: Write data from memory to register
                            // 0: Write data from ALU to register
     output reg RegWrite,   // 1: Enable writing to the register file
                            // 0: Disable writing to the register file
@@ -30,9 +30,10 @@ module Controler(
                            // 0: Disable reading from memory
     output reg MemSize,    // 1: 32-bit memory access
                            // 0: 8-bit memory access
-    output reg Branch,     // 1: Enable branch operation
-                           // 0: Disable branch operation
-    output reg ALUSrc,     // 1: ALU second operand is an immediate value
+    output reg [2:0] Branch,     // 1: Branch instruction
+                           // 0: eq
+                           // 2: Jump instruction
+    output reg [1:0] ALUSrc,     // 1: ALU second operand is an immediate value
                            // 0: ALU second operand is from a register
     output reg [3:0] ALUOp  // Specifies the ALU operation to perform based on alu_ops_t
 );
@@ -55,13 +56,13 @@ module Controler(
     always_comb begin
         case (opcode)
             OPCODE_R_TYPE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 MemSize  = 1'b1;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b00;
 
                 case ({funct7, funct3})
                     {7'b0000000, 3'b000}: ALUOp = ADD;
@@ -77,13 +78,13 @@ module Controler(
             end
 
             OPCODE_I_TYPE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
                 MemSize  = 1'b1;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b01;
 
                 case (funct3)
                     3'b000: ALUOp = ADD;
@@ -102,98 +103,105 @@ module Controler(
             end
 
             OPCODE_LOAD: begin
-                MemtoReg = 1'b1;
+                MemtoReg = 2'b10;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b1;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b01;
                 ALUOp    = ADD;
 
                 case ({funct3})
                     3'b000: MemSize = 1'b0; // 8-bit lb
                     3'b010: MemSize = 1'b1; // 32-bit lw
+                    default: MemSize = 1'b1; // 32-bit lw
                 endcase
                 
             end
 
             OPCODE_STORE: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b1;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b01;
                 ALUOp    = ADD;
 
                 case ({funct3})
                     3'b000: MemSize = 1'b0; // 8-bit sb
                     3'b010: MemSize = 1'b1; // 32-bit sw
+                    default: MemSize = 1'b1; // 32-bit sw
                 endcase
             end
 
             OPCODE_BRANCH: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b1;
-                ALUSrc   = 1'b0;
+                ALUSrc   = 2'b00;
                 ALUOp    = SUB;
                 MemSize  = 1'b1;
+
+                case ({funct3})
+                    3'b000: Branch = 3'b011; // beq
+                    3'b001: Branch = 3'b001; // bne
+                    default: Branch = 3'b000; 
+                endcase
             end
 
             OPCODE_JALR: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b100;
+                ALUSrc   = 2'b01;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
 
             OPCODE_JAL: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b00;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
 
             OPCODE_LUI: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b01;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
 
             OPCODE_AUIPC: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b01;
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b1;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b10;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
 
             default: begin
-                MemtoReg = 1'b0;
+                MemtoReg = 2'b00;
                 RegWrite = 1'b0;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 1'b0;
-                ALUSrc   = 1'b0;
+                Branch   = 3'b000;
+                ALUSrc   = 2'b00;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
             end
