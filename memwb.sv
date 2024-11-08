@@ -35,7 +35,7 @@ module MEMWBREG #(
     output reg [DATA_WIDTH-1:0] memory_data_out,
     output reg [4:0] rd_addr_out,
     output reg [1:0] MemtoReg_out,
-    output reg RegWrite_out
+    output reg RegWrite_out,
 
     output reg jump_out
 );

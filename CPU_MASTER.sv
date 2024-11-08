@@ -465,7 +465,7 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [4:0] MEMWB_rd_addr;
     wire [1:0] MEMWB_flush_and_stall;
 
-    wire memwb_jump_out;
+    wire MEMWB_jump_out;
 
     // MEMWB stage module
     MEMWBREG #(
