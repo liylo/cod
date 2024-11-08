@@ -42,7 +42,11 @@ module Branch #(
         end else begin
             if ((branch[1] ~^ branch_condition_result) && branch[0]) begin
                 flush      <= 1'b1;
-                branch_out <= (Next_PC - 4);
+                branch_out <= Next_PC;
+                use_branch <= 1;
+            end else if (branch[2]) begin
+                flush      <= 1'b1;
+                branch_out <= Next_PC;
                 use_branch <= 1;
             end else begin
                 flush      <= 1'b0;

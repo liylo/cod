@@ -33,7 +33,10 @@ module IM #(
     output reg [DATA_WIDTH-1:0] wb_dat_o,
     input  wire [DATA_WIDTH-1:0] wb_dat_i,
     output reg [DATA_WIDTH/8-1:0] wb_sel_o,
-    output reg wb_we_o
+    output reg wb_we_o,
+
+    // current PC
+    output reg [ADDR_WIDTH-1:0] PC_out
 );
     // State machine states
     typedef enum logic [1:0] {
@@ -42,6 +45,8 @@ module IM #(
     } state_t;
 
     state_t state;
+
+    assign PC_out = wb_adr_o;
 
     // Sequential logic for state transition and outputs
     always_ff @(posedge clk or posedge reset) begin

@@ -72,6 +72,8 @@ module cpu_master #(
         .PC_out(IF_PC_new_1)
     );  
 
+    wire [ADDR_WIDTH-1:0] IF_PC_in;
+
     // Instantiation of IM module
     IM #(
         .PC_ADDR(32'h8000_0000),
@@ -92,7 +94,8 @@ module cpu_master #(
         .wb_dat_o(if_wb_dat_o),
         .wb_dat_i(if_wb_dat_i),
         .wb_sel_o(if_wb_sel_o),
-        .wb_we_o(if_wb_we_o)
+        .wb_we_o(if_wb_we_o),
+        .PC_out(IF_PC_in)
     );
 
     //IFID 
@@ -107,7 +110,7 @@ module cpu_master #(
     ) ifid (
         .clk(clk),
         .reset(reset),
-        .PC_addr(IF_PC_reg),
+        .PC_addr(IF_PC_in),
         .im_instruction(IF_instr),
         .flush_and_stall(IFID_flush_and_stall),
         .PC_out(IFID_PC),
