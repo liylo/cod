@@ -36,7 +36,7 @@ module IFIDREG #(
             PC_out <= PC_ADDR;            // Reset PC to initial address
         end else if (flush) begin
             instruction <= 32'h0000_0000; // Flush instruction to NOP
-            PC_out <= PC_addr;            // Update PC
+            PC_out <= PC_ADDR;            // Update PC
         end else if (!stall) begin
             instruction <= im_instruction; // Load new instruction
             PC_out <= PC_addr;             // Update PC

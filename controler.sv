@@ -156,7 +156,7 @@ module Controler(
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 3'b100;
+                Branch   = 3'b010;
                 ALUSrc   = 2'b01;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;
@@ -167,7 +167,7 @@ module Controler(
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 MemRead  = 1'b0;
-                Branch   = 3'b100;
+                Branch   = 3'b110;
                 ALUSrc   = 2'b01;
                 ALUOp    = ADD;
                 MemSize  = 1'b1;

@@ -15,12 +15,16 @@ module SUM #(
 );
     
         always_comb begin
-            if (branch[0]) begin
+            if (branch[0]) begin // beq and bne
                 PC_reg_out = PC_reg_in + imm;
             end
             else if (branch[2]) begin
+                // jal
+                PC_reg_out = PC_reg_in + imm;
+            end else if (branch[1]) begin
                 // jalr
                 PC_reg_out = reg_a_in + imm;
+                PC_reg_out[0] = 0;
             end else begin
                 PC_reg_out = PC_reg_in + 4;
             end
