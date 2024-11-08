@@ -465,6 +465,8 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [4:0] MEMWB_rd_addr;
     wire [1:0] MEMWB_flush_and_stall;
 
+    wire memwb_jump_out;
+
     // MEMWB stage module
     MEMWBREG #(
         .PC_ADDR(32'h8000_0000),
@@ -485,7 +487,9 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .memory_data_out(MEMWB_memory_data),
         .rd_addr_out(MEMWB_rd_addr),
         .MemtoReg_out(MEMWB_MemtoReg),
-        .RegWrite_out(MEMWB_RegWrite)
+        .RegWrite_out(MEMWB_RegWrite),
+        .jump_in(EXMEM_Branch[2]),
+        .jump_out(MEMWB_jump_out)
     );
 
     // WB stage signals
@@ -501,7 +505,8 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .mem_in(MEMWB_memory_data),
         .alu_in(MEMWB_ALU_result),
         .reg_out(WB_wdata),
-        .PC_reg_in(MEMWB_PC)
+        .PC_reg_in(MEMWB_PC),
+        .jump(MEMWB_jump_out)
     );
 
     // Stall&Flush Controll

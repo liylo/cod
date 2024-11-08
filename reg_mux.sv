@@ -7,6 +7,7 @@ module REG_MUX #(
 )
 (
     input  wire [1:0] which_mux,  
+    input  wire jump,
     input  wire [DATA_WIDTH-1:0] PC_reg_in,  
     input  wire [DATA_WIDTH-1:0] alu_in,
     input  wire [DATA_WIDTH-1:0] mem_in,
@@ -15,7 +16,12 @@ module REG_MUX #(
     always_comb begin
         case(which_mux) 
             2'b00: begin
-                reg_out = PC_reg_in;
+                if (jump) begin
+                    reg_out = PC_reg_in + 4;
+                end
+                else begin
+                    reg_out = PC_reg_in;
+                end
             end
             2'b01: begin
                 reg_out = alu_in;
