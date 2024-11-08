@@ -82,6 +82,8 @@ module cpu_master #(
         .reset(reset),
         .PC_addr(IF_PC_reg),
         .instruction(IF_instr),
+        .flush(PC_flush_and_bubble[1]),
+        .stall(IFID_flush_and_stall[0]),//if ifid stall
         .stall_and_flush(IF_stall_and_flush),
         .wb_cyc_o(if_wb_cyc_o),
         .wb_stb_o(if_wb_stb_o),
@@ -168,8 +170,6 @@ module cpu_master #(
     .ADDR_WIDTH(32),           // Address width as specified
     .DATA_WIDTH(32)            // Data width as specified
 ) decoder_instance (
-    .clk(clk),
-    .reset(reset),
     .instruction(IFID_instr),
     .rd(ID_rd),
     .rs1(ID_rs1),
