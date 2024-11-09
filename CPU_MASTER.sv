@@ -72,6 +72,8 @@ module cpu_master #(
         .PC_out(IF_PC_new_1)
     );  
 
+    wire [ADDR_WIDTH-1:0] IF_PC_in;
+
     // Instantiation of IM module
     IM #(
         .PC_ADDR(32'h8000_0000),
@@ -92,7 +94,8 @@ module cpu_master #(
         .wb_dat_o(if_wb_dat_o),
         .wb_dat_i(if_wb_dat_i),
         .wb_sel_o(if_wb_sel_o),
-        .wb_we_o(if_wb_we_o)
+        .wb_we_o(if_wb_we_o),
+        .PC_out(IF_PC_in)
     );
 
     //IFID 
@@ -107,7 +110,7 @@ module cpu_master #(
     ) ifid (
         .clk(clk),
         .reset(reset),
-        .PC_addr(IF_PC_reg),
+        .PC_addr(IF_PC_in),
         .im_instruction(IF_instr),
         .flush_and_stall(IFID_flush_and_stall),
         .PC_out(IFID_PC),
@@ -462,6 +465,8 @@ ID_REG_IN_MUX id_reg_in_mux2 (
     wire [4:0] MEMWB_rd_addr;
     wire [1:0] MEMWB_flush_and_stall;
 
+    wire MEMWB_jump_out;
+
     // MEMWB stage module
     MEMWBREG #(
         .PC_ADDR(32'h8000_0000),
@@ -482,7 +487,9 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .memory_data_out(MEMWB_memory_data),
         .rd_addr_out(MEMWB_rd_addr),
         .MemtoReg_out(MEMWB_MemtoReg),
-        .RegWrite_out(MEMWB_RegWrite)
+        .RegWrite_out(MEMWB_RegWrite),
+        .jump_in(EXMEM_Branch[2]),
+        .jump_out(MEMWB_jump_out)
     );
 
     // WB stage signals
@@ -498,7 +505,8 @@ ID_REG_IN_MUX id_reg_in_mux2 (
         .mem_in(MEMWB_memory_data),
         .alu_in(MEMWB_ALU_result),
         .reg_out(WB_wdata),
-        .PC_reg_in(MEMWB_PC)
+        .PC_reg_in(MEMWB_PC),
+        .jump(MEMWB_jump_out)
     );
 
     // Stall&Flush Controll

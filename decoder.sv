@@ -119,7 +119,7 @@ module DECODER #(
                 rd_reg <= instruction[11:7];
                 rs1_reg <= 5'b0;
                 rs2_reg <= 5'b0;
-                imm_reg <= {{(DATA_WIDTH-21){instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0};
+                imm_reg <= {{11{instruction[31]}}, instruction[31], instruction[19:12], instruction[20], instruction[30:21], 1'b0};
                 imm_type_reg <= 1'b1;
             end
 

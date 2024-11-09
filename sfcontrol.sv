@@ -49,11 +49,7 @@ module SFCONTROL #(
         // end
 
         // Determine stall signals
-        if (hazard) begin
-            PC_stall_and_flush[0] = 1'b1; // Stall
-            IFID_stall_and_flush[0] = 1'b1; // Stall
-            IDEX_stall_and_flush[0] = 1'b1; // Stall
-        end else if (mem) begin
+        if (mem) begin
             PC_stall_and_flush[0] = 1'b1; // Stall
             IFID_stall_and_flush[0] = 1'b1; // Stall
             IDEX_stall_and_flush[0] = 1'b1; // Stall
@@ -65,8 +61,11 @@ module SFCONTROL #(
             IDEX_stall_and_flush[1] = 1'b1; // Flush
             EXMEM_stall_and_flush[1] = 1'b1; // Flush
             MEMWB_stall_and_flush[1] = 1'b1; // Flush
-        end
-        else if (im) begin
+        end else if (hazard) begin
+            PC_stall_and_flush[0] = 1'b1; // Stall
+            IFID_stall_and_flush[0] = 1'b1; // Stall
+            IDEX_stall_and_flush[1] = 1'b1; // flush
+        end else if (im) begin
             PC_stall_and_flush[0] = 1'b1; // Stall
             IFID_stall_and_flush[1] = 1'b1; // flush
         end 

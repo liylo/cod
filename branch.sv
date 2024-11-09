@@ -40,9 +40,13 @@ module Branch #(
             branch_out  <= PC_ADDR;
             use_branch  <= 0;
         end else begin
-            if ((branch[1] ~^ branch_condition_result) && branch[0]) begin
+            if ((branch[1] ~^ branch_condition_result) && branch[0]) begin //beq and bne
                 flush      <= 1'b1;
-                branch_out <= (Next_PC - 4);
+                branch_out <= Next_PC;
+                use_branch <= 1;
+            end else if (branch[0] == 0 && branch[1] == 1) begin // jal and jalr
+                flush      <= 1'b1;
+                branch_out <= Next_PC;
                 use_branch <= 1;
             end else begin
                 flush      <= 1'b0;

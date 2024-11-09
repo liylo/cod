@@ -18,6 +18,8 @@ module MEMWBREG #(
     
     // Control signals for flush and stall
     input wire [1:0] flush_and_stall, // flush_and_stall[1]: flush, flush_and_stall[0]: stall
+
+    input wire jump_in,
     
     // Inputs from EX/MEM pipeline register
     input wire [1:0] MemtoReg,
@@ -33,7 +35,9 @@ module MEMWBREG #(
     output reg [DATA_WIDTH-1:0] memory_data_out,
     output reg [4:0] rd_addr_out,
     output reg [1:0] MemtoReg_out,
-    output reg RegWrite_out
+    output reg RegWrite_out,
+
+    output reg jump_out
 );
 
     always @(posedge clk or posedge reset) begin
@@ -45,6 +49,7 @@ module MEMWBREG #(
             rd_addr_out      <= 5'b0;
             MemtoReg_out     <= 2'b00;
             RegWrite_out     <= 1'b0;
+            jump_out         <= 1'b0;
         end else if (flush_and_stall[1]) begin
             // Flush: set outputs to NOP/bubble values
             PC_out           <= PC_ADDR;
@@ -53,6 +58,7 @@ module MEMWBREG #(
             rd_addr_out      <= 5'b0;
             MemtoReg_out     <= 2'b00;
             RegWrite_out     <= 1'b0;
+            jump_out         <= 1'b0;
         end else if (flush_and_stall[0]) begin
             // Stall: outputs retain their previous values (do nothing)
             // No assignment needed; registers hold their values
@@ -64,6 +70,7 @@ module MEMWBREG #(
             rd_addr_out      <= rd_addr_in;
             MemtoReg_out     <= MemtoReg;
             RegWrite_out     <= RegWrite;
+            jump_out         <= jump_in;
         end
     end
 
